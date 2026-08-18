@@ -285,6 +285,20 @@ const UI = (() => {
     rib.textContent = res.record ? 'NEW RECORD!' : 'RUN OVER';
     rib.classList.toggle('record', !!res.record);
 
+
+    /* second chance button */
+    const rev = $('#reviveBtn');
+    $('#reviveCost').textContent = U.fmt(res.reviveCost || 0);
+    rev.classList.toggle('hidden', !res.canRevive);
+
+    /* local top-5 leaderboard */
+    const board = $('#goBoard');
+    board.innerHTML = '<div class="board-head">YOUR TOP RUNS</div>' +
+      (Save.d.runsLog || []).map((r, i) => {
+        const mine = r.score === res.score && Math.floor(res.dist) === r.dist;
+        return `<div class="brow${mine ? ' mine' : ''}"><span>${i + 1}</span><b>${U.fmt(r.score)}</b><i>${r.dist} m</i></div>`;
+      }).join('');
+
     const mBox = $('#goMissions');
     mBox.innerHTML = '';
     Missions.ensure().forEach(m => {
@@ -365,6 +379,7 @@ const UI = (() => {
     nav($('#restartBtn'), () => Game.start());
     nav($('#quitBtn'), () => Game.toMenu());
     nav($('#againBtn'), () => Game.start());
+    nav($('#reviveBtn'), () => { if (Game.revive()) el.gameover.classList.add('hidden'); });
     nav($('#goMenuBtn'), () => Game.toMenu());
     nav($('#goShopBtn'), () => { buildShop(); el.gameover.classList.add('hidden'); Game.toMenu(); el.shop.classList.remove('hidden'); refreshStats(); });
 
