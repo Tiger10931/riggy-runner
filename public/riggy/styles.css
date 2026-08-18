@@ -418,3 +418,20 @@ canvas#game{
   .menu-stats{margin-bottom:8px;}
   .logo-riggy{font-size:56px;}
 }
+
+/* ---------- second chance + local leaderboard ---------- */
+.big-btn.revive{
+  background:linear-gradient(180deg,#57e0ff,#1a9ec9); color:#052430;
+  box-shadow:0 6px 0 #0d6c8c, 0 12px 22px rgba(0,0,0,.35);
+  display:inline-flex; align-items:center; justify-content:center; gap:8px; margin-bottom:10px;
+}
+.big-btn.revive:active{transform:translateY(4px); box-shadow:0 2px 0 #0d6c8c;}
+.go-board{display:flex; flex-direction:column; gap:4px; margin-bottom:14px; font-size:12px; text-align:left;}
+.board-head{letter-spacing:2px; opacity:.6; font-size:10px; margin-bottom:2px;}
+.go-board .brow{
+  display:grid; grid-template-columns:20px 1fr auto; align-items:center; gap:10px;
+  background:rgba(255,255,255,.06); border-radius:9px; padding:5px 10px;
+}
+.go-board .brow span{opacity:.55;}
+.go-board .brow i{font-style:normal; opacity:.7;}
+.go-board .brow.mine{background:rgba(255,210,63,.18); color:#fff0bd;}
