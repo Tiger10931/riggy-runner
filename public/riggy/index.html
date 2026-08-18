@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+<title>RIGGY RUNNER — Danno Cal Endless Dash</title>
+<link rel="stylesheet" href="styles.css" />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='55' r='34' fill='%231b74d1' stroke='%23111' stroke-width='6'/><rect x='30' y='2' width='12' height='30' rx='6' fill='%231b74d1' stroke='%23111' stroke-width='5'/><rect x='60' y='2' width='12' height='30' rx='6' fill='%231b74d1' stroke='%23111' stroke-width='5'/></svg>" />
+</head>
+<body>
+
+<div id="app">
+
+  <!-- ================= GAME CANVAS ================= -->
+  <canvas id="game" width="1280" height="720"></canvas>
+
+  <!-- ================= IN-GAME HUD ================= -->
+  <div id="hud" class="layer hidden">
+    <div class="hud-top">
+      <div class="hud-left">
+        <div class="score-block">
+          <div class="score-label">SCORE</div>
+          <div class="score-value" id="scoreValue">0</div>
+          <div class="score-sub"><span id="distValue">0</span> m &middot; <span id="speedValue">0</span> km/h</div>
+        </div>
+        <div class="multi-chip hidden" id="multiChip">x<span id="multiValue">2</span></div>
+      </div>
+
+      <div class="hud-right">
+        <div class="coin-block">
+          <div class="coin-icon"></div>
+          <div class="coin-count" id="coinCount">0</div>
+        </div>
+        <button class="icon-btn" id="pauseBtn" title="Pause (P / Esc)">
+          <span class="pause-bars"></span>
+        </button>
+      </div>
+    </div>
+
+    <div class="hud-powerups" id="powerupBar"></div>
+
+    <div class="hud-mission" id="missionToast"></div>
+
+    <div class="combo-pop" id="comboPop"></div>
+
+    <div class="hud-bottom">
+      <div class="hoverboard-btn" id="hoverBtn" title="Hoverboard (Shift / double-tap)">
+        <div class="hb-art"></div>
+        <div class="hb-count" id="hbCount">3</div>
+      </div>
+      <div class="key-hints">
+        <span><b>&larr; &rarr;</b> lane</span>
+        <span><b>&uarr; / Space</b> jump</span>
+        <span><b>&darr;</b> roll</span>
+        <span><b>Shift</b> board</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MAIN MENU ================= -->
+  <div id="menu" class="layer">
+    <div class="menu-sky"></div>
+    <div class="logo-wrap">
+      <h1 class="logo">
+        <span class="logo-riggy">RIGGY</span>
+        <span class="logo-runner">RUNNER</span>
+      </h1>
+      <div class="logo-tag">DANNO CAL &nbsp;&bull;&nbsp; ENDLESS DASH</div>
+    </div>
+
+    <div class="menu-mascot">
+      <canvas id="menuMascot" width="420" height="480"></canvas>
+      <div class="mascot-plate">RIGGY</div>
+    </div>
+
+    <div class="menu-stats">
+      <div class="stat"><span class="stat-k">BEST</span><span class="stat-v" id="bestScore">0</span></div>
+      <div class="stat"><span class="stat-k">COINS</span><span class="stat-v" id="walletCoins">0</span></div>
+      <div class="stat"><span class="stat-k">RUNS</span><span class="stat-v" id="totalRuns">0</span></div>
+      <div class="stat"><span class="stat-k">TOP m</span><span class="stat-v" id="bestDist">0</span></div>
+    </div>
+
+    <div class="menu-buttons">
+      <button class="big-btn play" id="playBtn">PLAY</button>
+      <div class="btn-row">
+        <button class="mid-btn" id="charBtn">CHARACTERS</button>
+        <button class="mid-btn" id="shopBtn">SHOP</button>
+      </div>
+      <div class="btn-row">
+        <button class="mid-btn ghost" id="missionsBtn">MISSIONS</button>
+        <button class="mid-btn ghost" id="howBtn">HOW TO PLAY</button>
+        <button class="mid-btn ghost" id="settingsBtn">SETTINGS</button>
+      </div>
+    </div>
+
+    <div class="menu-foot">Made with pure HTML · CSS · JS — no images, every pixel drawn in code.</div>
+  </div>
+
+  <!-- ================= CHARACTER SELECT ================= -->
+  <div id="characters" class="layer sheet hidden">
+    <div class="sheet-head">
+      <button class="back-btn" data-close>&larr;</button>
+      <h2>CHARACTERS</h2>
+      <div class="sheet-coins"><div class="coin-icon small"></div><span class="wallet">0</span></div>
+    </div>
+    <div class="char-stage">
+      <canvas id="charPreview" width="380" height="440"></canvas>
+      <div class="char-info">
+        <div class="char-name" id="charName">Classic Riggy</div>
+        <div class="char-desc" id="charDesc">The original Danno Cal mascot. Blue, bouncy, unbothered.</div>
+        <div class="char-perk" id="charPerk">Perk: none — pure skill.</div>
+        <button class="big-btn small" id="charAction">SELECT</button>
+      </div>
+    </div>
+    <div class="char-grid" id="charGrid"></div>
+  </div>
+
+  <!-- ================= SHOP ================= -->
+  <div id="shop" class="layer sheet hidden">
+    <div class="sheet-head">
+      <button class="back-btn" data-close>&larr;</button>
+      <h2>SHOP</h2>
+      <div class="sheet-coins"><div class="coin-icon small"></div><span class="wallet">0</span></div>
+    </div>
+    <div class="shop-tabs">
+      <button class="tab active" data-tab="upgrades">UPGRADES</button>
+      <button class="tab" data-tab="boards">BOARDS</button>
+      <button class="tab" data-tab="consumables">GEAR</button>
+    </div>
+    <div class="shop-grid" id="shopGrid"></div>
+  </div>
+
+  <!-- ================= MISSIONS ================= -->
+  <div id="missions" class="layer sheet hidden">
+    <div class="sheet-head">
+      <button class="back-btn" data-close>&larr;</button>
+      <h2>MISSIONS</h2>
+      <div class="sheet-coins"><div class="coin-icon small"></div><span class="wallet">0</span></div>
+    </div>
+    <div class="mission-note">Finish all three to level up your Riggy Rank and bank a bonus.</div>
+    <div class="mission-list" id="missionList"></div>
+    <div class="rank-row">
+      <div class="rank-badge" id="rankBadge">1</div>
+      <div class="rank-meta">
+        <div class="rank-title">RIGGY RANK <span id="rankNum">1</span></div>
+        <div class="rank-bar"><div class="rank-fill" id="rankFill"></div></div>
+        <div class="rank-sub" id="rankSub">0 / 3 missions this set</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= HOW TO PLAY ================= -->
+  <div id="how" class="layer sheet hidden">
+    <div class="sheet-head">
+      <button class="back-btn" data-close>&larr;</button>
+      <h2>HOW TO PLAY</h2>
+      <div></div>
+    </div>
+    <div class="how-body">
+      <div class="how-card">
+        <h3>CONTROLS</h3>
+        <ul>
+          <li><b>&larr; / &rarr;</b> or <b>A / D</b> — switch lane</li>
+          <li><b>&uarr; / W / Space</b> — jump (hold nothing, timing is everything)</li>
+          <li><b>&darr; / S</b> — roll under signs and beams</li>
+          <li><b>Shift</b> or <b>double-tap the screen</b> — deploy hoverboard</li>
+          <li><b>P / Esc</b> — pause</li>
+          <li><b>Swipe</b> anywhere on touch screens</li>
+        </ul>
+      </div>
+      <div class="how-card">
+        <h3>PICKUPS</h3>
+        <ul>
+          <li><span class="pu-dot magnet"></span><b>Coin Magnet</b> — vacuums coins from all lanes</li>
+          <li><span class="pu-dot jet"></span><b>Jetpack</b> — soar above the track on a coin stream</li>
+          <li><span class="pu-dot x2"></span><b>Score Multiplier</b> — stacks with your combo</li>
+          <li><span class="pu-dot boots"></span><b>Super Sneakers</b> — sky-high double jumps</li>
+          <li><span class="pu-dot shield"></span><b>Bubble Shield</b> — eats one crash</li>
+        </ul>
+      </div>
+      <div class="how-card">
+        <h3>TRICKS &amp; SCORING</h3>
+        <ul>
+          <li>Ride the roofs of trains for a <b>rooftop bonus</b> every second.</li>
+          <li>Near-misses build a <b>combo</b>; the longer the chain, the fatter the multiplier.</li>
+          <li>Coin runs on train roofs are worth double — go up there.</li>
+          <li>Hoverboards absorb one wipe-out and give 20s of drift.</li>
+          <li>Every 500&nbsp;m the world speeds up and swaps biome.</li>
+          <li>Wipe out? Buy a <b>second chance</b> with coins and keep the score.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= SETTINGS ================= -->
+  <div id="settings" class="layer sheet hidden">
+    <div class="sheet-head">
+      <button class="back-btn" data-close>&larr;</button>
+      <h2>SETTINGS</h2>
+      <div></div>
+    </div>
+    <div class="settings-body">
+      <label class="toggle-row"><span>Music</span><input type="checkbox" id="optMusic" checked><i></i></label>
+      <label class="toggle-row"><span>Sound effects</span><input type="checkbox" id="optSfx" checked><i></i></label>
+      <label class="toggle-row"><span>Screen shake</span><input type="checkbox" id="optShake" checked><i></i></label>
+      <label class="toggle-row"><span>Motion blur / speed lines</span><input type="checkbox" id="optBlur" checked><i></i></label>
+      <label class="toggle-row"><span>Show FPS</span><input type="checkbox" id="optFps"><i></i></label>
+      <label class="toggle-row"><span>High contrast obstacles</span><input type="checkbox" id="optContrast"><i></i></label>
+      <div class="danger-row">
+        <button class="mid-btn ghost" id="resetBtn">RESET ALL PROGRESS</button>
+      </div>
+      <div class="credits">
+        Riggy Runner v1.0 — a Subway-Surfers-style endless dash starring the Danno Cal mascot.<br>
+        Every character, coin, train and cloud is drawn procedurally on a 2D canvas.
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= PAUSE ================= -->
+  <div id="pause" class="layer modal hidden">
+    <div class="modal-card">
+      <h2>PAUSED</h2>
+      <div class="pause-stats">
+        <div><span>Score</span><b id="pauseScore">0</b></div>
+        <div><span>Coins</span><b id="pauseCoins">0</b></div>
+        <div><span>Distance</span><b id="pauseDist">0 m</b></div>
+      </div>
+      <button class="big-btn" id="resumeBtn">RESUME</button>
+      <div class="btn-row">
+        <button class="mid-btn ghost" id="restartBtn">RESTART</button>
+        <button class="mid-btn ghost" id="quitBtn">MAIN MENU</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= GAME OVER ================= -->
+  <div id="gameover" class="layer modal hidden">
+    <div class="modal-card wide">
+      <div class="go-ribbon" id="goRibbon">RUN OVER</div>
+      <div class="go-score" id="goScore">0</div>
+      <div class="go-best" id="goBest">Best 0</div>
+      <div class="go-grid">
+        <div class="go-cell"><span>Coins</span><b id="goCoins">0</b></div>
+        <div class="go-cell"><span>Distance</span><b id="goDist">0 m</b></div>
+        <div class="go-cell"><span>Top combo</span><b id="goCombo">x1</b></div>
+        <div class="go-cell"><span>Near misses</span><b id="goNear">0</b></div>
+        <div class="go-cell"><span>Tricks</span><b id="goTricks">0</b></div>
+        <div class="go-cell"><span>Biome</span><b id="goBiome">City</b></div>
+      </div>
+      <div class="go-missions" id="goMissions"></div>
+      <div class="go-board" id="goBoard"></div>
+      <button class="big-btn revive hidden" id="reviveBtn">SECOND CHANCE — <span id="reviveCost">250</span> <span class="coin-icon small"></span></button>
+      <button class="big-btn" id="againBtn">RUN AGAIN</button>
+      <div class="btn-row">
+        <button class="mid-btn ghost" id="goMenuBtn">MAIN MENU</button>
+        <button class="mid-btn ghost" id="goShopBtn">SHOP</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= COUNTDOWN / TOASTS ================= -->
+  <div id="countdown" class="layer center hidden"><div class="count-num" id="countNum">3</div></div>
+  <div id="toastHost"></div>
+  <div id="fps" class="hidden">60</div>
+</div>
+
+<script src="js/utils.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/riggy.js"></script>
+<script src="js/props.js"></script>
+<script src="js/world.js"></script>
+<script src="js/data.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/game.js"></script>
+</body>
+</html>
