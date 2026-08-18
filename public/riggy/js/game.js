@@ -791,6 +791,15 @@ const Game = (() => {
     S.score += S.speed * dt * .045 * S.multiplier;
     if (S.support) { S.roofTime += dt; S.score += 60 * dt * S.multiplier; }
 
+    /* live "new best" callout */
+    if (!S.beatBest && Save.d.best > 0 && S.score > Save.d.best) {
+      S.beatBest = true;
+      UI.toast('NEW BEST SCORE!', 'gold');
+      Sound.sfx.newRecord();
+      S.flash = .5;
+      buzz(40);
+    }
+
     /* combo decay */
     if (S.comboTimer > 0) {
       S.comboTimer -= dt;
@@ -1259,7 +1268,7 @@ const Game = (() => {
     requestAnimationFrame(frame);
   }
 
-  const api = { start, toMenu, togglePause, deployBoard, boot, get state() { return S; } };
+  const api = { start, toMenu, togglePause, deployBoard, revive, boot, get state() { return S; } };
   return api;
 })();
 
