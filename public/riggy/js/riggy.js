@@ -291,11 +291,19 @@ const Riggy = (() => {
     ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.quadraticCurveTo(cP.x, cP.y, b.x, b.y); ctx.stroke();
     ctx.strokeStyle = skin.body; ctx.lineWidth = w;
     ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.quadraticCurveTo(cP.x, cP.y, b.x, b.y); ctx.stroke();
-    // inner highlight
-    ctx.strokeStyle = U.rgba(skin.bodyHi, .5); ctx.lineWidth = w * .34;
+    // core shadow on the far side
+    ctx.strokeStyle = U.rgba(skin.bodyLo, .45); ctx.lineWidth = w * .36;
     ctx.beginPath();
-    ctx.moveTo(a.x - w * .18, a.y); ctx.quadraticCurveTo(cP.x - w * .2, cP.y, b.x - w * .18, b.y);
+    ctx.moveTo(a.x + w * .22, a.y); ctx.quadraticCurveTo(cP.x + w * .24, cP.y, b.x + w * .22, b.y);
     ctx.stroke();
+    // inner highlight
+    ctx.strokeStyle = U.rgba(skin.bodyHi, .55); ctx.lineWidth = w * .3;
+    ctx.beginPath();
+    ctx.moveTo(a.x - w * .2, a.y); ctx.quadraticCurveTo(cP.x - w * .22, cP.y, b.x - w * .2, b.y);
+    ctx.stroke();
+    // joint cap so knees/elbows read round
+    U.ellipse(ctx, cP.x, cP.y, w * .34, w * .34);
+    ctx.fillStyle = U.rgba(skin.bodyLo, .25); ctx.fill();
     ctx.restore();
   }
 
@@ -315,14 +323,34 @@ const Riggy = (() => {
 
   function shoe(ctx, p, skin, flip = 1, angle = 0) {
     ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(angle); ctx.scale(flip, 1);
-    U.poly(ctx, [[-11, -9], [10, -10], [17, -1], [17, 5], [-12, 5], [-14, -2]]);
+    // chunky cartoon sneaker: rounded heel, sweeping toe
+    ctx.beginPath();
+    ctx.moveTo(-13, -4);
+    ctx.quadraticCurveTo(-13, -13, -3, -12);
+    ctx.quadraticCurveTo(9, -12, 15, -5);
+    ctx.quadraticCurveTo(20, -1, 19, 3);
+    ctx.lineTo(-13, 3);
+    ctx.closePath();
     U.ink(ctx, skin.shoe, 4.5, skin.outline);
-    // sole
-    U.roundRect(ctx, -14, 1, 31, 6, 3);
+    // upper shading
+    ctx.save(); ctx.clip();
+    ctx.fillStyle = U.rgba(skin.shoeLo, .55); ctx.fillRect(-14, -2, 36, 8);
+    ctx.fillStyle = 'rgba(255,255,255,.35)'; ctx.fillRect(-12, -12, 10, 6);
+    ctx.restore();
+    // midsole
+    U.roundRect(ctx, -14, 0, 34, 7, 3.5);
     U.ink(ctx, skin.shoeLo, 3, skin.outline);
-    // lace stripe
-    ctx.beginPath(); ctx.moveTo(-2, -8); ctx.lineTo(4, -2);
-    ctx.strokeStyle = skin.outline; ctx.lineWidth = 2.5; ctx.stroke();
+    // side swoosh
+    ctx.beginPath();
+    ctx.moveTo(-6, -1); ctx.quadraticCurveTo(4, -8, 14, -5);
+    ctx.strokeStyle = U.rgba(skin.outline, .75); ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.stroke();
+    // laces
+    ctx.strokeStyle = skin.outline; ctx.lineWidth = 2;
+    for (let i = 0; i < 2; i++) {
+      ctx.beginPath();
+      ctx.moveTo(-6 + i * 5, -11 + i * 1.5); ctx.lineTo(-1 + i * 5, -6 + i * 1.5);
+      ctx.stroke();
+    }
     ctx.restore();
   }
 
@@ -344,6 +372,11 @@ const Riggy = (() => {
     ctx.quadraticCurveTo(w * .22, -len * .5, w * .18, 0);
     ctx.closePath();
     ctx.fillStyle = U.rgba(skin.bodyLo, .55); ctx.fill();
+    // rim light down the leading edge
+    ctx.beginPath();
+    ctx.moveTo(-w * .34, 0);
+    ctx.quadraticCurveTo(-w * .42, -len * .55, tipX - w * .22, -len * .88);
+    ctx.strokeStyle = U.rgba(skin.bodyHi, .6); ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.stroke();
     ctx.restore();
   }
 
