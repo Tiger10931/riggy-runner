@@ -409,17 +409,66 @@ const Riggy = (() => {
   }
 
   function shorts(ctx, skin) {
-    U.poly(ctx, [[-25, -62], [25, -62], [29, -34], [12, -30], [0, -38], [-12, -30], [-29, -34]]);
+    // athletic shorts: curved waist, two rounded leg holes, side stripes
+    ctx.save();
+    ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+
+    // main shorts shape
+    ctx.beginPath();
+    ctx.moveTo(-26, -62);
+    ctx.quadraticCurveTo(-28, -52, -28, -42);
+    ctx.quadraticCurveTo(-28, -34, -20, -34); // left leg opening
+    ctx.quadraticCurveTo(-12, -34, -10, -42); // inner left leg
+    ctx.lineTo(0, -44);                         // crotch seam
+    ctx.lineTo(10, -42);                        // inner right leg
+    ctx.quadraticCurveTo(12, -34, 20, -34);     // right leg opening
+    ctx.quadraticCurveTo(28, -34, 28, -42);
+    ctx.quadraticCurveTo(28, -52, 26, -62);
+    ctx.closePath();
     U.ink(ctx, skin.shorts, 5, skin.outline);
-    // shading + waistband
+
+    // shading and waistband clipped to the shorts shape
     ctx.save(); ctx.clip();
+    // side shadows
     ctx.fillStyle = U.rgba(skin.shortsLo, .55);
-    ctx.fillRect(4, -62, 30, 40);
+    ctx.fillRect(10, -62, 20, 32);
+    ctx.fillRect(-30, -62, 8, 32);
+    // front crease highlight
     ctx.fillStyle = U.rgba('#ffffff', .18);
-    ctx.fillRect(-26, -62, 12, 40);
+    ctx.fillRect(-6, -62, 12, 30);
+    // leg-opening underside shadow
+    ctx.fillStyle = U.rgba(skin.shortsLo, .7);
+    ctx.fillRect(-22, -36, 18, 4);
+    ctx.fillRect(4, -36, 18, 4);
     ctx.restore();
-    ctx.beginPath(); ctx.moveTo(-26, -58); ctx.lineTo(26, -58);
-    ctx.strokeStyle = U.rgba(skin.outline, .5); ctx.lineWidth = 2.5; ctx.stroke();
+
+    // waistband
+    ctx.beginPath();
+    ctx.moveTo(-26, -60); ctx.quadraticCurveTo(0, -64, 26, -60);
+    ctx.strokeStyle = U.rgba(skin.outline, .55); ctx.lineWidth = 3.5; ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(-26, -55); ctx.quadraticCurveTo(0, -51, 26, -55);
+    ctx.strokeStyle = U.rgba(skin.shortsLo, .6); ctx.lineWidth = 2.5; ctx.stroke();
+
+    // drawstring
+    ctx.beginPath();
+    ctx.arc(0, -58, 2.2, 0, Math.PI * 2);
+    ctx.fillStyle = U.rgba(skin.shortsLo, .85); ctx.fill();
+    ctx.strokeStyle = skin.outline; ctx.lineWidth = 1.5; ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(0, -56); ctx.quadraticCurveTo(-2, -50, -5, -48);
+    ctx.moveTo(0, -56); ctx.quadraticCurveTo(2, -50, 5, -48);
+    ctx.stroke();
+
+    // side stripes
+    ctx.beginPath();
+    ctx.moveTo(-25, -61); ctx.quadraticCurveTo(-26, -48, -25, -36);
+    ctx.strokeStyle = U.rgba('#ffffff', .55); ctx.lineWidth = 3.5; ctx.lineCap = 'round'; ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(25, -61); ctx.quadraticCurveTo(26, -48, 25, -36);
+    ctx.strokeStyle = U.rgba('#ffffff', .55); ctx.lineWidth = 3.5; ctx.lineCap = 'round'; ctx.stroke();
+
+    ctx.restore();
   }
 
   function torso(ctx, j, skin) {
