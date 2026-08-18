@@ -764,7 +764,7 @@ const Riggy = (() => {
 
     // body
     torso(ctx, j, skin);
-    shorts(ctx, skin);
+    shorts(ctx, skin, j);
 
     // near limbs
     limb(ctx, j.hipL, j.footL, j.kneeL, 16, skin);
