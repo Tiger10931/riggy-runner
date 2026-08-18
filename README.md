@@ -1,26 +1,3 @@
-# Riggy Runner Revamp
-
-make riggy runner better!
-
-This project was built with [Lovable](https://lovable.dev).
-
-**Live app**: https://riggy-runner.lovable.app
-
-## Build with Lovable
-
-Continue developing this project in the [Lovable editor](https://lovable.dev/projects/b5440a87-53aa-45a4-b233-924c16f4c4f7).
-
-- **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: every change made in Lovable is committed straight to this repository.
-- **Full ownership**: this code is yours. Push to `main` on GitHub and your changes sync back into Lovable, ready for your next prompt.
-
-## Development
-
-Prefer working locally? You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
-
-```sh
-git clone <this-repository-url>
-cd <repository-name>
-npm i
-npm run dev
-```
+RIGGY RUNNER
+BUILT WITH LOVABLE AI
+*yes i know i used ai i just dont know how to code sorry!
