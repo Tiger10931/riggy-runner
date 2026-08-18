@@ -246,10 +246,63 @@ const Game = (() => {
       addCoinRun(0, 74, z + 120, 4, 62, 50);
       addCoinRun(0, 26, z + 620, 4, 62);
       return len + 520;
+    },
+    /* 13: zig-zag barrier chain — rhythm test */
+    (z, d) => {
+      let l = U.randInt(0, 2);
+      for (let i = 0; i < 4; i++) {
+        addObstacle({ type: 'barrier', lane: l, x: laneX(l), z: z + i * 300, w: 118, h: 58, d: 40, clear: 'jump', lethal: true });
+        const nxt = l === 0 ? 1 : l === 2 ? 1 : U.pick([0, 2]);
+        addCoinRun(laneX(nxt), 34, z + i * 300 - 40, 3, 66);
+        l = nxt;
+      }
+      return 1400;
+    },
+    /* 14: full-width tunnel arch — roll or die */
+    (z, d) => {
+      for (let l = 0; l < 3; l++)
+        addObstacle({ type: 'beam', lane: l, x: laneX(l), z, w: 132, h: 90, y: 74, d: 40, clear: 'roll', lethal: true });
+      addCoinRun(laneX(1), 26, z - 200, 8, 62);
+      return 620;
+    },
+    /* 15: twin ramps into staggered train roofs */
+    (z, d) => {
+      const lanes = [0, 1, 2].sort(() => Math.random() - .5).slice(0, 2);
+      lanes.forEach((l, i) => {
+        const off = i * 420;
+        addObstacle({ type: 'ramp', lane: l, x: laneX(l), z: z + off, w: 124, h: 86, d: 140, clear: 'none', lethal: false, launch: true });
+        addObstacle({
+          type: 'train', lane: l, x: laneX(l), z: z + off + 260 + 400, w: 128, h: 132, d: 800,
+          roof: 132, lethal: true, pal: U.pick(TRAIN_PALS)
+        });
+        addCoinRun(laneX(l), 190, z + off + 150, 10, 84, 40);
+      });
+      return 1700;
+    },
+    /* 16: two creeping trains closing in from opposite lanes */
+    (z, d) => {
+      [0, 2].forEach((l, i) => addObstacle({
+        type: 'train', lane: l, x: laneX(l), z: z + 1500 + i * 500, w: 128, h: 132, d: 820, roof: 132,
+        lethal: true, moving: true, vz: -180 - Math.random() * 200, pal: U.pick(TRAIN_PALS)
+      }));
+      addCoinRun(laneX(1), 34, z, 10, 78);
+      return 1200;
+    },
+    /* 17: jackpot lane — dense coins plus a guaranteed powerup */
+    (z, d) => {
+      const l = U.randInt(0, 2);
+      addCoinRun(laneX(l), 34, z, 14, 56);
+      addCoinRun(laneX(l), 120, z + 120, 8, 56, 70);
+      addPickup(U.pick(['magnet', 'x2', 'jetpack', 'hoverboard']), laneX(l), 60, z + 460);
+      for (const o of [0, 1]) {
+        const other = (l + 1 + o) % 3;
+        addObstacle({ type: 'cones', lane: other, x: laneX(other), z: z + 300 + o * 300, w: 110, h: 52, d: 60, clear: 'jump', lethal: false });
+      }
+      return 900;
     }
   ];
 
-  const EASY = [0, 1, 2, 3, 6, 10];
+  const EASY = [0, 1, 2, 3, 6, 10, 13, 17];
 
   function generateAhead() {
     const limit = S.z + 7000;
