@@ -422,6 +422,9 @@ const Game = (() => {
     S.runStats = { runCoins: 0, runDist: 0, jumps: 0, rolls: 0, near: 0, roofTime: 0, magnets: 0, runScore: 0, maxCombo: 1, tricks: 0, boards: 0, biomeIdx: 0 };
 
     S.coyote = 0; S.jumpBuf = 0;
+    S.beatBest = false;
+    S.reviveCount = 0;
+    S.banked = { coins: 0, dist: 0, jumps: 0, rolls: 0, tricks: 0, near: 0, counted: false };
     spawnZ = S.z + 1600;
     scenerySpawnZ = S.z;
     patternCount = 0;
@@ -460,20 +463,27 @@ const Game = (() => {
     S.shake = 1; S.hitFlash = 1;
     Sound.sfx.crash();
     Sound.duck(true);
+    buzz(140);
     puff(S.laneX, S.y + 60, S.z, 22, 'rgba(255,255,255,.85)', 220);
 
     const d = Save.d;
+    const B = S.banked;
     const record = S.score > d.best;
     d.best = Math.max(d.best, Math.floor(S.score));
     d.bestDist = Math.max(d.bestDist, Math.floor(S.dist));
-    d.runs++;
-    d.totalDist += Math.floor(S.dist);
+    if (!B.counted) { d.runs++; B.counted = true; }
+    d.totalDist += Math.floor(S.dist) - B.dist;
     d.hoverboards = Math.max(0, d.hoverboards - S.boardUsed);
-    d.totalJumps += S.runStats.jumps;
-    d.totalRolls += S.runStats.rolls;
-    d.totalTricks += S.tricks;
-    d.nearMisses += S.near;
-    Save.addCoins(S.coins);
+    d.totalJumps += S.runStats.jumps - B.jumps;
+    d.totalRolls += S.runStats.rolls - B.rolls;
+    d.totalTricks += S.tricks - B.tricks;
+    d.nearMisses += S.near - B.near;
+    Save.addCoins(S.coins - B.coins);
+    /* remember what has already been written so a revived run never double-counts */
+    S.banked = {
+      coins: S.coins, dist: Math.floor(S.dist), jumps: S.runStats.jumps,
+      rolls: S.runStats.rolls, tricks: S.tricks, near: S.near, counted: true
+    };
 
     S.runStats.runScore = Math.floor(S.score);
     S.runStats.runDist = Math.floor(S.dist);
@@ -485,18 +495,55 @@ const Game = (() => {
     S.runStats.biomeIdx = S.biome;
     const done = Missions.update(S.runStats);
     const setDone = Missions.checkSetComplete();
+    Save.pushRun({ score: Math.floor(S.score), dist: Math.floor(S.dist), coins: S.coins, at: Date.now() });
 
     setTimeout(() => {
       UI.gameOver({
         score: Math.floor(S.score), coins: S.coins, dist: S.dist,
         maxCombo: S.maxCombo, near: S.near, tricks: S.tricks,
-        biome: biome().name, record
+        biome: biome().name, record,
+        reviveCost: reviveCost(), canRevive: Save.d.coins >= reviveCost() && S.reviveCount < 3
       });
       if (record) Sound.sfx.newRecord();
       if (done.length) done.forEach(m => UI.toast('Mission done: ' + m.text, 'good'));
       if (setDone) UI.toast(`RANK ${setDone.rank}! +${setDone.bonus} coins`, 'gold');
       UI.refreshStats();
     }, 1300);
+  }
+
+  /* ---- second chance: pay coins to keep the run alive ---- */
+  function reviveCost() { return 250 * Math.pow(2, S.reviveCount || 0); }
+
+  function revive() {
+    if (S.mode !== 'dead') return false;
+    const cost = reviveCost();
+    if (!Save.spend(cost)) { Sound.sfx.deny(); UI.toast('Not enough coins', 'bad'); return false; }
+    S.reviveCount = (S.reviveCount || 0) + 1;
+    Save.d.revives = (Save.d.revives || 0) + 1;
+    Save.save();
+
+    /* clear the road just ahead so you never respawn into a wall */
+    obstacles = obstacles.filter(o => o.z < S.z - 200 || o.z > S.z + 2600);
+    obstacles.forEach(o => { o.hit = false; });
+
+    Object.assign(S, {
+      mode: 'play', state: 'run', crashT: 0, stumbleT: 0,
+      lane: 1, targetX: 0, laneT: 0,
+      y: 0, vy: 0, onGround: true, groundY: 0, support: null,
+      rolling: 0, jumps: 0, invuln: 3,
+      speed: SPEED_START, shake: 0, hitFlash: 0
+    });
+    breakCombo();
+    S.powers.shield = Math.max(S.powers.shield, puDuration('shield'));
+    UI.show(null);
+    UI.el.hud.classList.remove('hidden');
+    Sound.duck(false);
+    Sound.sfx.shield();
+    UI.toast('SECOND CHANCE! -' + cost + ' coins', 'gold');
+    UI.refreshStats();
+    puff(S.laneX, 60, S.z, 20, 'rgba(140,235,255,.9)', 200);
+    S.flash = .6;
+    return true;
   }
 
   /* ============================================================
