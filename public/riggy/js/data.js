@@ -26,6 +26,8 @@ const Save = (() => {
     missions: null,
     missionSet: 0,
     rank: 1,
+    runsLog: [],
+    revives: 0,
     opts: { music: true, sfx: true, shake: true, blur: true, fps: false, contrast: false },
     seenTutorial: false
   };
@@ -40,6 +42,7 @@ const Save = (() => {
       const merged = Object.assign(structuredClone(DEFAULT), parsed);
       merged.upgrades = Object.assign(structuredClone(DEFAULT.upgrades), parsed.upgrades || {});
       merged.opts = Object.assign(structuredClone(DEFAULT.opts), parsed.opts || {});
+      if (!Array.isArray(merged.runsLog)) merged.runsLog = [];
       return merged;
     } catch (e) {
       console.warn('save corrupt, starting fresh', e);
@@ -55,7 +58,15 @@ const Save = (() => {
     get d() { return data; },
     save, reset,
     addCoins(n) { data.coins += n; data.totalCoins += n; save(); },
-    spend(n) { if (data.coins < n) return false; data.coins -= n; save(); return true; }
+    spend(n) { if (data.coins < n) return false; data.coins -= n; save(); return true; },
+    /* keeps a local top-5 leaderboard of best runs */
+    pushRun(entry) {
+      data.runsLog.push(entry);
+      data.runsLog.sort((a, b) => b.score - a.score);
+      data.runsLog = data.runsLog.slice(0, 5);
+      save();
+      return data.runsLog;
+    }
   };
 })();
 
