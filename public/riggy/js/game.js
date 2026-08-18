@@ -357,12 +357,14 @@ const Game = (() => {
      PARTICLES
      ============================================================ */
   function puff(x, y, z, n = 6, col = 'rgba(255,255,255,.7)', spread = 90) {
+    if (particles.length > 380) return;
     for (let i = 0; i < n; i++) particles.push({
       x, y, z, vx: U.rand(spread, -spread), vy: U.rand(spread * 1.4, 10), vz: U.rand(spread, -spread),
       life: 1, decay: U.rand(2.4, 1.2), r: U.rand(16, 6), col
     });
   }
   function sparkle(x, y, z, col = 'rgba(255,214,80,.95)') {
+    if (particles.length > 380) return;
     for (let i = 0; i < 8; i++) particles.push({
       x, y, z, vx: U.rand(170, -170), vy: U.rand(230, 20), vz: U.rand(120, -120),
       life: 1, decay: U.rand(3, 1.8), r: U.rand(8, 3), col, star: true
@@ -370,6 +372,12 @@ const Game = (() => {
   }
   function floatText(text, x, y, z, col = '#ffd23f') {
     floaters.push({ text, x, y, z, life: 1, col });
+  }
+
+  /* light haptic feedback on touch devices (rides the screen-shake toggle) */
+  function buzz(ms) {
+    if (!Save.d.opts.shake) return;
+    try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) { /* unsupported */ }
   }
 
   /* ============================================================
