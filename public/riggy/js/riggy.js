@@ -762,13 +762,15 @@ const Riggy = (() => {
     limb(ctx, j.shR, j.handR, j.elbR, 11, skin);
     glove(ctx, j.handR, 11, skin);
 
+    // near leg — drawn before shorts so the shorts cover the upper thigh
+    limb(ctx, j.hipL, j.footL, j.kneeL, 16, skin);
+    shoe(ctx, j.footL, skin, 1, (j.footL.y < -12 ? -.35 : 0));
+
     // body
     torso(ctx, j, skin);
     shorts(ctx, skin, j);
 
-    // near limbs
-    limb(ctx, j.hipL, j.footL, j.kneeL, 16, skin);
-    shoe(ctx, j.footL, skin, 1, (j.footL.y < -12 ? -.35 : 0));
+    // near arm — in front of the torso
     limb(ctx, j.shL, j.handL, j.elbL, 12, skin);
     glove(ctx, j.handL, 11.5, skin);
 
