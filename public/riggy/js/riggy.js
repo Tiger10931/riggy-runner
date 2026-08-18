@@ -672,8 +672,12 @@ const Riggy = (() => {
     if (shadow) {
       const sh = extra.shadowScale === undefined ? 1 : extra.shadowScale;
       ctx.save();
-      U.ellipse(ctx, 0, 2, 44 * sh, 12 * sh);
-      ctx.fillStyle = `rgba(0,0,0,${.28 * sh})`; ctx.fill();
+      const sg = ctx.createRadialGradient(0, 2, 2, 0, 2, 48 * sh);
+      sg.addColorStop(0, `rgba(0,0,0,${.34 * sh})`);
+      sg.addColorStop(.6, `rgba(0,0,0,${.18 * sh})`);
+      sg.addColorStop(1, 'rgba(0,0,0,0)');
+      U.ellipse(ctx, 0, 2, 48 * sh, 14 * sh);
+      ctx.fillStyle = sg; ctx.fill();
       ctx.restore();
     }
 
