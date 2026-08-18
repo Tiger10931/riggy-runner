@@ -423,13 +423,31 @@ const Riggy = (() => {
   }
 
   function torso(ctx, j, skin) {
-    U.poly(ctx, [
-      [-14, -112], [14, -112], [20, -84], [22, -60], [-22, -60], [-20, -84]
-    ]);
+    // rounded chest -> waist silhouette instead of a flat slab
+    ctx.beginPath();
+    ctx.moveTo(-13, -116);
+    ctx.quadraticCurveTo(0, -122, 13, -116);
+    ctx.quadraticCurveTo(23, -104, 23, -86);
+    ctx.quadraticCurveTo(23, -68, 20, -58);
+    ctx.lineTo(-20, -58);
+    ctx.quadraticCurveTo(-23, -68, -23, -86);
+    ctx.quadraticCurveTo(-23, -104, -13, -116);
+    ctx.closePath();
     U.ink(ctx, skin.body, 5, skin.outline);
+
     ctx.save(); ctx.clip();
-    ctx.fillStyle = U.rgba(skin.bodyLo, .45); ctx.fillRect(6, -114, 24, 60);
-    ctx.fillStyle = U.rgba(skin.bodyHi, .4); ctx.fillRect(-18, -114, 8, 60);
+    // form shading
+    const g = ctx.createLinearGradient(-24, 0, 24, 0);
+    g.addColorStop(0, U.rgba(skin.bodyHi, .45));
+    g.addColorStop(.45, U.rgba(skin.body, 0));
+    g.addColorStop(1, U.rgba(skin.bodyLo, .55));
+    ctx.fillStyle = g; ctx.fillRect(-24, -122, 48, 68);
+    // lighter belly / chest patch
+    U.ellipse(ctx, -1, -82, 14, 24);
+    ctx.fillStyle = U.rgba(skin.bodyHi, .38); ctx.fill();
+    // neck shadow under the head
+    U.ellipse(ctx, 0, -116, 15, 8);
+    ctx.fillStyle = U.rgba(skin.bodyLo, .5); ctx.fill();
     ctx.restore();
   }
 
@@ -449,6 +467,11 @@ const Riggy = (() => {
     g.addColorStop(.55, U.rgba(skin.body, 0));
     g.addColorStop(1, U.rgba(skin.bodyLo, .6));
     ctx.fillStyle = g; ctx.fillRect(-r, -r, r * 2, r * 2);
+    // soft muzzle so the face has structure
+    if (turn > -0.2) {
+      U.ellipse(ctx, turn * r * .16, r * .3, r * .42, r * .3);
+      ctx.fillStyle = U.rgba(skin.bodyHi, .32); ctx.fill();
+    }
     ctx.restore();
 
     if (turn < -0.2) {
@@ -501,8 +524,18 @@ const Riggy = (() => {
     }
 
     // nose dot
-    U.ellipse(ctx, cx, eyeY + r * .30, r * .055, r * .045);
+    U.ellipse(ctx, cx, eyeY + r * .29, r * .075, r * .06);
     ctx.fillStyle = skin.outline; ctx.fill();
+    U.ellipse(ctx, cx - r * .03, eyeY + r * .27, r * .026, r * .02);
+    ctx.fillStyle = 'rgba(255,255,255,.6)'; ctx.fill();
+
+    // cheek blush
+    if (j.mouth !== 'x') {
+      [-1, 1].forEach(s => {
+        U.ellipse(ctx, cx + s * r * .62, eyeY + r * .3, r * .13, r * .08);
+        ctx.fillStyle = 'rgba(255,120,140,.28)'; ctx.fill();
+      });
+    }
 
     // mouth
     ctx.save();
