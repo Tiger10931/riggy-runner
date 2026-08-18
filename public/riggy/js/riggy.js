@@ -408,64 +408,72 @@ const Riggy = (() => {
     ctx.restore();
   }
 
-  function shorts(ctx, skin) {
-    // athletic shorts: curved waist, two rounded leg holes, side stripes
+  function shorts(ctx, skin, j) {
+    // athletic shorts positioned around the pelvis; leg holes match the thigh joints
     ctx.save();
     ctx.lineJoin = 'round'; ctx.lineCap = 'round';
 
-    // main shorts shape
+    // thigh positions from the pose solver so the holes frame the legs
+    const leftHoleX = j.hipL.x * 1.08;
+    const rightHoleX = j.hipR.x * 1.08;
+    const waistY = -62;
+    const hemY = -34;
+    const holeWidth = 14;
+    const halfWaist = 25;
+
+    // main shorts shape with fabric bulging around the legs
     ctx.beginPath();
-    ctx.moveTo(-26, -62);
-    ctx.quadraticCurveTo(-28, -52, -28, -42);
-    ctx.quadraticCurveTo(-28, -34, -20, -34); // left leg opening
-    ctx.quadraticCurveTo(-12, -34, -10, -42); // inner left leg
-    ctx.lineTo(0, -44);                         // crotch seam
-    ctx.lineTo(10, -42);                        // inner right leg
-    ctx.quadraticCurveTo(12, -34, 20, -34);     // right leg opening
-    ctx.quadraticCurveTo(28, -34, 28, -42);
-    ctx.quadraticCurveTo(28, -52, 26, -62);
+    ctx.moveTo(-halfWaist, waistY);
+    ctx.quadraticCurveTo(-halfWaist - 2, waistY + 12, -halfWaist - 1, hemY - 4);
+    ctx.quadraticCurveTo(leftHoleX - holeWidth - 2, hemY - 2, leftHoleX - holeWidth, hemY + 2); // left outer hem
+    ctx.quadraticCurveTo(leftHoleX - 2, hemY + 6, leftHoleX + 2, hemY + 2);                    // inner left
+    ctx.lineTo(0, hemY - 2);                                                                  // crotch seam
+    ctx.lineTo(rightHoleX - 2, hemY + 2);                                                     // inner right
+    ctx.quadraticCurveTo(rightHoleX + 2, hemY + 6, rightHoleX + holeWidth, hemY + 2);          // right outer hem
+    ctx.quadraticCurveTo(rightHoleX + holeWidth + 2, hemY - 2, halfWaist + 1, hemY - 4);
+    ctx.quadraticCurveTo(halfWaist + 2, waistY + 12, halfWaist, waistY);
     ctx.closePath();
     U.ink(ctx, skin.shorts, 5, skin.outline);
 
-    // shading and waistband clipped to the shorts shape
+    // shading + waistband clipped to the shorts shape
     ctx.save(); ctx.clip();
     // side shadows
     ctx.fillStyle = U.rgba(skin.shortsLo, .55);
-    ctx.fillRect(10, -62, 20, 32);
-    ctx.fillRect(-30, -62, 8, 32);
-    // front crease highlight
-    ctx.fillStyle = U.rgba('#ffffff', .18);
-    ctx.fillRect(-6, -62, 12, 30);
-    // leg-opening underside shadow
-    ctx.fillStyle = U.rgba(skin.shortsLo, .7);
-    ctx.fillRect(-22, -36, 18, 4);
-    ctx.fillRect(4, -36, 18, 4);
+    ctx.fillRect(halfWaist - 8, waistY, 10, 30);
+    ctx.fillRect(-halfWaist, waistY, 8, 30);
+    // front highlight
+    ctx.fillStyle = U.rgba('#ffffff', .16);
+    ctx.fillRect(-6, waistY, 12, 28);
+    // leg-opening underside shadows
+    ctx.fillStyle = U.rgba(skin.shortsLo, .65);
+    ctx.fillRect(leftHoleX - holeWidth, hemY, holeWidth * 2, 4);
+    ctx.fillRect(rightHoleX - holeWidth, hemY, holeWidth * 2, 4);
     ctx.restore();
 
     // waistband
     ctx.beginPath();
-    ctx.moveTo(-26, -60); ctx.quadraticCurveTo(0, -64, 26, -60);
+    ctx.moveTo(-halfWaist, waistY + 2); ctx.quadraticCurveTo(0, waistY - 2, halfWaist, waistY + 2);
     ctx.strokeStyle = U.rgba(skin.outline, .55); ctx.lineWidth = 3.5; ctx.stroke();
     ctx.beginPath();
-    ctx.moveTo(-26, -55); ctx.quadraticCurveTo(0, -51, 26, -55);
+    ctx.moveTo(-halfWaist, waistY + 7); ctx.quadraticCurveTo(0, waistY + 11, halfWaist, waistY + 7);
     ctx.strokeStyle = U.rgba(skin.shortsLo, .6); ctx.lineWidth = 2.5; ctx.stroke();
 
     // drawstring
     ctx.beginPath();
-    ctx.arc(0, -58, 2.2, 0, Math.PI * 2);
+    ctx.arc(0, waistY + 4, 2.2, 0, Math.PI * 2);
     ctx.fillStyle = U.rgba(skin.shortsLo, .85); ctx.fill();
     ctx.strokeStyle = skin.outline; ctx.lineWidth = 1.5; ctx.stroke();
     ctx.beginPath();
-    ctx.moveTo(0, -56); ctx.quadraticCurveTo(-2, -50, -5, -48);
-    ctx.moveTo(0, -56); ctx.quadraticCurveTo(2, -50, 5, -48);
+    ctx.moveTo(0, waistY + 6); ctx.quadraticCurveTo(-2, waistY + 12, -5, waistY + 14);
+    ctx.moveTo(0, waistY + 6); ctx.quadraticCurveTo(2, waistY + 12, 5, waistY + 14);
     ctx.stroke();
 
     // side stripes
     ctx.beginPath();
-    ctx.moveTo(-25, -61); ctx.quadraticCurveTo(-26, -48, -25, -36);
+    ctx.moveTo(-halfWaist + 1, waistY); ctx.quadraticCurveTo(-halfWaist, waistY + 14, -halfWaist + 1, hemY);
     ctx.strokeStyle = U.rgba('#ffffff', .55); ctx.lineWidth = 3.5; ctx.lineCap = 'round'; ctx.stroke();
     ctx.beginPath();
-    ctx.moveTo(25, -61); ctx.quadraticCurveTo(26, -48, 25, -36);
+    ctx.moveTo(halfWaist - 1, waistY); ctx.quadraticCurveTo(halfWaist, waistY + 14, halfWaist - 1, hemY);
     ctx.strokeStyle = U.rgba('#ffffff', .55); ctx.lineWidth = 3.5; ctx.lineCap = 'round'; ctx.stroke();
 
     ctx.restore();
