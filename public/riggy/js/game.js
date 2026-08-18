@@ -658,6 +658,7 @@ const Game = (() => {
     S.shake = .35;
     breakCombo();
     Sound.sfx.stumble();
+    buzz(30);
   }
 
   function breakCombo() {
