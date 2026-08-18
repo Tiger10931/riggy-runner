@@ -291,11 +291,19 @@ const Riggy = (() => {
     ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.quadraticCurveTo(cP.x, cP.y, b.x, b.y); ctx.stroke();
     ctx.strokeStyle = skin.body; ctx.lineWidth = w;
     ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.quadraticCurveTo(cP.x, cP.y, b.x, b.y); ctx.stroke();
-    // inner highlight
-    ctx.strokeStyle = U.rgba(skin.bodyHi, .5); ctx.lineWidth = w * .34;
+    // core shadow on the far side
+    ctx.strokeStyle = U.rgba(skin.bodyLo, .45); ctx.lineWidth = w * .36;
     ctx.beginPath();
-    ctx.moveTo(a.x - w * .18, a.y); ctx.quadraticCurveTo(cP.x - w * .2, cP.y, b.x - w * .18, b.y);
+    ctx.moveTo(a.x + w * .22, a.y); ctx.quadraticCurveTo(cP.x + w * .24, cP.y, b.x + w * .22, b.y);
     ctx.stroke();
+    // inner highlight
+    ctx.strokeStyle = U.rgba(skin.bodyHi, .55); ctx.lineWidth = w * .3;
+    ctx.beginPath();
+    ctx.moveTo(a.x - w * .2, a.y); ctx.quadraticCurveTo(cP.x - w * .22, cP.y, b.x - w * .2, b.y);
+    ctx.stroke();
+    // joint cap so knees/elbows read round
+    U.ellipse(ctx, cP.x, cP.y, w * .34, w * .34);
+    ctx.fillStyle = U.rgba(skin.bodyLo, .25); ctx.fill();
     ctx.restore();
   }
 
@@ -315,14 +323,34 @@ const Riggy = (() => {
 
   function shoe(ctx, p, skin, flip = 1, angle = 0) {
     ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(angle); ctx.scale(flip, 1);
-    U.poly(ctx, [[-11, -9], [10, -10], [17, -1], [17, 5], [-12, 5], [-14, -2]]);
+    // chunky cartoon sneaker: rounded heel, sweeping toe
+    ctx.beginPath();
+    ctx.moveTo(-13, -4);
+    ctx.quadraticCurveTo(-13, -13, -3, -12);
+    ctx.quadraticCurveTo(9, -12, 15, -5);
+    ctx.quadraticCurveTo(20, -1, 19, 3);
+    ctx.lineTo(-13, 3);
+    ctx.closePath();
     U.ink(ctx, skin.shoe, 4.5, skin.outline);
-    // sole
-    U.roundRect(ctx, -14, 1, 31, 6, 3);
+    // upper shading
+    ctx.save(); ctx.clip();
+    ctx.fillStyle = U.rgba(skin.shoeLo, .55); ctx.fillRect(-14, -2, 36, 8);
+    ctx.fillStyle = 'rgba(255,255,255,.35)'; ctx.fillRect(-12, -12, 10, 6);
+    ctx.restore();
+    // midsole
+    U.roundRect(ctx, -14, 0, 34, 7, 3.5);
     U.ink(ctx, skin.shoeLo, 3, skin.outline);
-    // lace stripe
-    ctx.beginPath(); ctx.moveTo(-2, -8); ctx.lineTo(4, -2);
-    ctx.strokeStyle = skin.outline; ctx.lineWidth = 2.5; ctx.stroke();
+    // side swoosh
+    ctx.beginPath();
+    ctx.moveTo(-6, -1); ctx.quadraticCurveTo(4, -8, 14, -5);
+    ctx.strokeStyle = U.rgba(skin.outline, .75); ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.stroke();
+    // laces
+    ctx.strokeStyle = skin.outline; ctx.lineWidth = 2;
+    for (let i = 0; i < 2; i++) {
+      ctx.beginPath();
+      ctx.moveTo(-6 + i * 5, -11 + i * 1.5); ctx.lineTo(-1 + i * 5, -6 + i * 1.5);
+      ctx.stroke();
+    }
     ctx.restore();
   }
 
@@ -344,6 +372,11 @@ const Riggy = (() => {
     ctx.quadraticCurveTo(w * .22, -len * .5, w * .18, 0);
     ctx.closePath();
     ctx.fillStyle = U.rgba(skin.bodyLo, .55); ctx.fill();
+    // rim light down the leading edge
+    ctx.beginPath();
+    ctx.moveTo(-w * .34, 0);
+    ctx.quadraticCurveTo(-w * .42, -len * .55, tipX - w * .22, -len * .88);
+    ctx.strokeStyle = U.rgba(skin.bodyHi, .6); ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.stroke();
     ctx.restore();
   }
 
@@ -390,13 +423,31 @@ const Riggy = (() => {
   }
 
   function torso(ctx, j, skin) {
-    U.poly(ctx, [
-      [-14, -112], [14, -112], [20, -84], [22, -60], [-22, -60], [-20, -84]
-    ]);
+    // rounded chest -> waist silhouette instead of a flat slab
+    ctx.beginPath();
+    ctx.moveTo(-13, -116);
+    ctx.quadraticCurveTo(0, -122, 13, -116);
+    ctx.quadraticCurveTo(23, -104, 23, -86);
+    ctx.quadraticCurveTo(23, -68, 20, -58);
+    ctx.lineTo(-20, -58);
+    ctx.quadraticCurveTo(-23, -68, -23, -86);
+    ctx.quadraticCurveTo(-23, -104, -13, -116);
+    ctx.closePath();
     U.ink(ctx, skin.body, 5, skin.outline);
+
     ctx.save(); ctx.clip();
-    ctx.fillStyle = U.rgba(skin.bodyLo, .45); ctx.fillRect(6, -114, 24, 60);
-    ctx.fillStyle = U.rgba(skin.bodyHi, .4); ctx.fillRect(-18, -114, 8, 60);
+    // form shading
+    const g = ctx.createLinearGradient(-24, 0, 24, 0);
+    g.addColorStop(0, U.rgba(skin.bodyHi, .45));
+    g.addColorStop(.45, U.rgba(skin.body, 0));
+    g.addColorStop(1, U.rgba(skin.bodyLo, .55));
+    ctx.fillStyle = g; ctx.fillRect(-24, -122, 48, 68);
+    // lighter belly / chest patch
+    U.ellipse(ctx, -1, -82, 14, 24);
+    ctx.fillStyle = U.rgba(skin.bodyHi, .38); ctx.fill();
+    // neck shadow under the head
+    U.ellipse(ctx, 0, -116, 15, 8);
+    ctx.fillStyle = U.rgba(skin.bodyLo, .5); ctx.fill();
     ctx.restore();
   }
 
@@ -416,6 +467,11 @@ const Riggy = (() => {
     g.addColorStop(.55, U.rgba(skin.body, 0));
     g.addColorStop(1, U.rgba(skin.bodyLo, .6));
     ctx.fillStyle = g; ctx.fillRect(-r, -r, r * 2, r * 2);
+    // soft muzzle so the face has structure
+    if (turn > -0.2) {
+      U.ellipse(ctx, turn * r * .16, r * .3, r * .42, r * .3);
+      ctx.fillStyle = U.rgba(skin.bodyHi, .32); ctx.fill();
+    }
     ctx.restore();
 
     if (turn < -0.2) {
@@ -468,8 +524,18 @@ const Riggy = (() => {
     }
 
     // nose dot
-    U.ellipse(ctx, cx, eyeY + r * .30, r * .055, r * .045);
+    U.ellipse(ctx, cx, eyeY + r * .29, r * .075, r * .06);
     ctx.fillStyle = skin.outline; ctx.fill();
+    U.ellipse(ctx, cx - r * .03, eyeY + r * .27, r * .026, r * .02);
+    ctx.fillStyle = 'rgba(255,255,255,.6)'; ctx.fill();
+
+    // cheek blush
+    if (j.mouth !== 'x') {
+      [-1, 1].forEach(s => {
+        U.ellipse(ctx, cx + s * r * .62, eyeY + r * .3, r * .13, r * .08);
+        ctx.fillStyle = 'rgba(255,120,140,.28)'; ctx.fill();
+      });
+    }
 
     // mouth
     ctx.save();
@@ -606,8 +672,12 @@ const Riggy = (() => {
     if (shadow) {
       const sh = extra.shadowScale === undefined ? 1 : extra.shadowScale;
       ctx.save();
-      U.ellipse(ctx, 0, 2, 44 * sh, 12 * sh);
-      ctx.fillStyle = `rgba(0,0,0,${.28 * sh})`; ctx.fill();
+      const sg = ctx.createRadialGradient(0, 2, 2, 0, 2, 48 * sh);
+      sg.addColorStop(0, `rgba(0,0,0,${.34 * sh})`);
+      sg.addColorStop(.6, `rgba(0,0,0,${.18 * sh})`);
+      sg.addColorStop(1, 'rgba(0,0,0,0)');
+      U.ellipse(ctx, 0, 2, 48 * sh, 14 * sh);
+      ctx.fillStyle = sg; ctx.fill();
       ctx.restore();
     }
 
