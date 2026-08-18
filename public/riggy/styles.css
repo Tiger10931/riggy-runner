@@ -435,3 +435,4 @@ canvas#game{
 .go-board .brow span{opacity:.55;}
 .go-board .brow i{font-style:normal; opacity:.7;}
 .go-board .brow.mine{background:rgba(255,210,63,.18); color:#fff0bd;}
+.big-btn.revive{width:100%;}
