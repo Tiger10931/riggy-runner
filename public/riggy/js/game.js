@@ -42,7 +42,7 @@ const Game = (() => {
     cv.style.width = W + 'px';
     cv.style.height = H + 'px';
     ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
-    horizon = Math.round(H * 0.42);
+    horizon = Math.round(H * 0.34);
   }
   window.addEventListener('resize', resize);
 
