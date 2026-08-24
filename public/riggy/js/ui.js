@@ -184,8 +184,16 @@ const UI = (() => {
         const equipped = Save.d.board === b.id;
         const card = document.createElement('div');
         card.className = 'shop-card';
+        const art = {
+          deck: 'width:88px;height:20px;border-radius:12px',
+          surf: 'width:96px;height:18px;border-radius:50%/60%',
+          arrow: 'width:92px;height:20px;border-radius:6px;clip-path:polygon(0 20%,80% 0,100% 50%,80% 100%,0 80%)',
+          flame: 'width:92px;height:20px;border-radius:14px;clip-path:polygon(6% 0,94% 0,100% 50%,94% 100%,6% 100%,0 50%)',
+          disc: 'width:76px;height:30px;border-radius:50%',
+          wing: 'width:100px;height:20px;clip-path:polygon(12% 0,88% 0,100% 60%,70% 100%,30% 100%,0 60%)'
+        }[b.shape || 'deck'];
         card.innerHTML = `<div class="board-art" style="height:56px;display:grid;place-items:center">
-            <div style="width:88px;height:20px;border-radius:12px;border:3px solid #fff;background:linear-gradient(180deg,${b.col},${U.shade(b.col, -.45)});box-shadow:0 10px 18px ${U.rgba(b.col, .5)}"></div>
+            <div style="${art};border:3px solid #fff;background:linear-gradient(180deg,${b.col},${U.shade(b.col, -.45)});box-shadow:0 10px 18px ${U.rgba(b.col, .5)}"></div>
           </div>
           <div class="card-name">${b.name.toUpperCase()}</div>
           <div class="shop-desc">${b.desc}</div>
