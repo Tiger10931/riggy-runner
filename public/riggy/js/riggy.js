@@ -424,7 +424,7 @@ const Riggy = (() => {
     const leftHoleX = j.hipL.x * 1.08;
     const rightHoleX = j.hipR.x * 1.08;
     const waistY = -62;
-    const hemY = -40;
+    const hemY = -46;
     const holeWidth = 14;
     const halfWaist = 25;
 
