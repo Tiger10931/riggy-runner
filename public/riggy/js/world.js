@@ -277,11 +277,11 @@ const World = (() => {
 
   /* horizon fog band so distant geometry melts away */
   function drawFog(ctx, B, W, horizon) {
-    const g = ctx.createLinearGradient(0, horizon - 70, 0, horizon + 150);
+    const g = ctx.createLinearGradient(0, horizon - 40, 0, horizon + 90);
     g.addColorStop(0, U.rgba(B.fog, 0));
-    g.addColorStop(.42, U.rgba(B.fog, .85));
+    g.addColorStop(.42, U.rgba(B.fog, .55));
     g.addColorStop(1, U.rgba(B.fog, 0));
-    ctx.fillStyle = g; ctx.fillRect(0, horizon - 70, W, 220);
+    ctx.fillStyle = g; ctx.fillRect(0, horizon - 40, W, 140);
   }
 
   /* ---------------------------------------------------------
