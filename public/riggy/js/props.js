@@ -314,23 +314,72 @@ const Props = (() => {
   }
 
   /* ---------- HOVERBOARD under the player ---------- */
-  function hoverboard(P, ctx, sx, sy, s, t) {
+  const TRAIL_COL = {
+    dust: 'rgba(150,235,255,.8)', foam: 'rgba(190,250,255,.9)', spark: 'rgba(255,240,160,.9)',
+    ooze: 'rgba(150,255,120,.85)', fire: 'rgba(255,170,60,.9)', ring: 'rgba(215,235,255,.85)',
+    void: 'rgba(190,150,255,.85)', gold: 'rgba(255,225,130,.95)'
+  };
+
+  function hoverboard(P, ctx, sx, sy, s, t, board) {
+    const b = board || {};
+    const col = b.col || '#ff2f86';
+    const shape = b.shape || 'deck';
+    const glowC = TRAIL_COL[b.trail] || TRAIL_COL.dust;
     ctx.save();
     ctx.translate(sx, sy);
     ctx.scale(s, s);
-    // thruster glow
+
+    // thruster glow, tinted per board
     const g = ctx.createRadialGradient(0, 14, 4, 0, 14, 70);
-    g.addColorStop(0, 'rgba(120,220,255,.75)'); g.addColorStop(1, 'rgba(120,220,255,0)');
+    g.addColorStop(0, U.rgba(col, .7)); g.addColorStop(1, U.rgba(col, 0));
     ctx.fillStyle = g; ctx.fillRect(-80, -20, 160, 90);
-    U.roundRect(ctx, -56, -6, 112, 20, 10);
+
     const bg = ctx.createLinearGradient(-56, 0, 56, 0);
-    bg.addColorStop(0, '#ff8ec4'); bg.addColorStop(.5, '#ff2f86'); bg.addColorStop(1, '#a3125b');
-    U.ink(ctx, bg, 4, '#10161f');
-    ctx.fillStyle = 'rgba(255,255,255,.55)';
-    ctx.fillRect(-44, -3, 88, 4);
-    for (let i = -1; i <= 1; i += 2) {
-      U.ellipse(ctx, i * 34, 16 + Math.sin(t * 20 + i) * 2, 12, 6);
-      ctx.fillStyle = 'rgba(150,235,255,.8)'; ctx.fill();
+    bg.addColorStop(0, U.shade(col, .35)); bg.addColorStop(.5, col); bg.addColorStop(1, U.shade(col, -.42));
+
+    if (shape === 'surf') {
+      /* long surf deck with pointed nose + tail fin */
+      U.poly(ctx, [[-64, 2], [-40, -8], [40, -8], [64, 2], [40, 12], [-40, 12]]);
+      U.ink(ctx, bg, 4, '#10161f');
+      U.poly(ctx, [[6, 10], [18, 24], [26, 10]]); U.ink(ctx, U.shade(col, -.3), 3, '#10161f');
+    } else if (shape === 'arrow') {
+      U.poly(ctx, [[-58, -6], [46, -8], [66, 2], [46, 12], [-58, 12], [-46, 3]]);
+      U.ink(ctx, bg, 4, '#10161f');
+      U.poly(ctx, [[-26, -4], [4, -4], [-8, 3], [16, 3], [-16, 11], [-6, 4], [-28, 4]]);
+      U.ink(ctx, '#fff6c9', 0);
+    } else if (shape === 'flame') {
+      U.poly(ctx, [[-62, 0], [-34, -10], [34, -10], [62, 0], [34, 13], [-34, 13]]);
+      U.ink(ctx, bg, 4, '#10161f');
+      for (let i = -1; i <= 1; i++) {
+        U.poly(ctx, [[i * 24 - 9, -6], [i * 24, -18], [i * 24 + 9, -6]]);
+        U.ink(ctx, 'rgba(255,210,120,.95)', 0);
+      }
+    } else if (shape === 'disc') {
+      U.ellipse(ctx, 0, 2, 62, 16); U.ink(ctx, bg, 4, '#10161f');
+      U.ellipse(ctx, 0, -1, 30, 8); U.ink(ctx, U.shade(col, .5), 3, '#10161f');
+    } else if (shape === 'wing') {
+      U.poly(ctx, [[-52, -8], [52, -8], [70, 4], [30, 12], [-30, 12], [-70, 4]]);
+      U.ink(ctx, bg, 4, '#10161f');
+      U.poly(ctx, [[-12, -8], [12, -8], [8, 12], [-8, 12]]); U.ink(ctx, U.shade(col, -.35), 3, '#10161f');
+    } else {
+      U.roundRect(ctx, -56, -6, 112, 20, 10);
+      U.ink(ctx, bg, 4, '#10161f');
+    }
+
+    ctx.fillStyle = 'rgba(255,255,255,.5)';
+    ctx.fillRect(-40, -3, 80, 3);
+
+    /* thruster pods / trail puffs */
+    const pods = shape === 'disc' ? 3 : 2;
+    for (let i = 0; i < pods; i++) {
+      const x = pods === 3 ? (i - 1) * 34 : (i * 2 - 1) * 34;
+      U.ellipse(ctx, x, 16 + Math.sin(t * 20 + i) * 2, 12, 6);
+      ctx.fillStyle = glowC; ctx.fill();
+    }
+    if (b.trail === 'ring') {
+      ctx.strokeStyle = U.rgba(col, .45); ctx.lineWidth = 3;
+      const r = 40 + (t * 60 % 40);
+      ctx.beginPath(); ctx.ellipse(0, 18, r, r * .28, 0, 0, 7); ctx.stroke();
     }
     ctx.restore();
   }
