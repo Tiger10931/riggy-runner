@@ -10,9 +10,9 @@
 const Game = (() => {
 
   /* ---------------- constants ---------------- */
-  const FOCAL = 720;
-  const CAM_Y = 128;          // camera height above the rails
-  const CAM_BACK = 305;       // how far behind the runner the camera sits
+  const FOCAL = 640;
+  const CAM_Y = 178;          // camera height above the rails (higher = see further)
+  const CAM_BACK = 380;       // how far behind the runner the camera sits
   const UNITS_PER_M = 40;
 
   const GRAV = 3000;
