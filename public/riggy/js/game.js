@@ -1128,7 +1128,7 @@ const Game = (() => {
       const b = BOARDS.find(x => x.id === Save.d.board) || BOARDS[0];
       ctx.save();
       ctx.globalAlpha = S.boardT < 3 && Math.floor(t * 8) % 2 ? .45 : 1;
-      Props.hoverboard(P, ctx, pr.sx, pr.sy + 4 * s, s * .95, t);
+      Props.hoverboard(P, ctx, pr.sx, pr.sy + 4 * s, s * .95, t, b);
       ctx.restore();
     }
     if (S.powers.shield > 0) Props.shieldBubble(ctx, pr.sx, pr.sy - 78 * s, 118 * s, t);

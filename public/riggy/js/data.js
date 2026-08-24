@@ -88,11 +88,15 @@ const CHARACTERS = [
    BOARDS (cosmetic + small handling perks)
    ============================================================ */
 const BOARDS = [
-  { id: 'pinky', name: 'Pinky', price: 0, col: '#ff2f86', desc: 'Standard issue. Bubblegum pink, surprisingly rigid.', dur: 20 },
-  { id: 'wave', name: 'Wave Rider', price: 1500, col: '#20c5ff', desc: 'Surf-shaped deck. Rides 4 seconds longer.', dur: 24 },
-  { id: 'bolt', name: 'Bolt', price: 3000, col: '#ffd23f', desc: 'Lightning trim. Lane changes are instant.', dur: 22, snap: true },
-  { id: 'toxic', name: 'Toxic', price: 4500, col: '#7cff4d', desc: 'Emits a suspicious green haze. Coins stick to it.', dur: 22, magnetish: true },
-  { id: 'void', name: 'Void', price: 9000, col: '#9b5cff', desc: 'Made of night. Survives two crashes instead of one.', dur: 26, tough: true }
+  { id: 'pinky', name: 'Pinky', price: 0, col: '#ff2f86', desc: 'Standard issue. Bubblegum pink, surprisingly rigid.', dur: 20, shape: 'deck', trail: 'dust' },
+  { id: 'wave', name: 'Wave Rider', price: 1500, col: '#20c5ff', desc: 'Surf-shaped deck. Rides 4 seconds longer.', dur: 24, shape: 'surf', trail: 'foam' },
+  { id: 'bolt', name: 'Bolt', price: 3000, col: '#ffd23f', desc: 'Lightning trim. Lane changes are instant.', dur: 22, snap: true, shape: 'arrow', trail: 'spark' },
+  { id: 'toxic', name: 'Toxic', price: 4500, col: '#7cff4d', desc: 'Emits a suspicious green haze. Coins stick to it.', dur: 22, magnetish: true, shape: 'deck', trail: 'ooze' },
+  { id: 'ember', name: 'Ember', price: 6000, col: '#ff6a2a', desc: 'Cast from a foundry reject. Leaves cinders in the lane.', dur: 23, shape: 'flame', trail: 'fire' },
+  { id: 'saucer', name: 'Saucer', price: 7000, col: '#c9d6e4', desc: 'Round, chrome and mildly classified. Floats a touch higher.', dur: 24, shape: 'disc', trail: 'ring' },
+  { id: 'delta', name: 'Delta Wing', price: 8000, col: '#00e5b0', desc: 'Twin-wing racer. Snappy lanes, teal jetwash.', dur: 24, snap: true, shape: 'wing', trail: 'spark' },
+  { id: 'void', name: 'Void', price: 9000, col: '#9b5cff', desc: 'Made of night. Survives two crashes instead of one.', dur: 26, tough: true, shape: 'deck', trail: 'void' },
+  { id: 'goldie', name: 'Solid Gold', price: 15000, col: '#ffc93c', desc: 'Absurdly expensive. Coins cling to it and it shrugs off a second crash.', dur: 28, tough: true, magnetish: true, shape: 'arrow', trail: 'gold' }
 ];
 
 /* ============================================================
