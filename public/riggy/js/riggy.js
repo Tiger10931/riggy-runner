@@ -254,8 +254,11 @@ const Riggy = (() => {
         j.root.y = -Math.abs(Math.sin(t * 3)) * 6;
         j.head.y = -152 + b * 2; j.head.tilt = b * .05;
         j.ear.flop = -0.12 + b * .16;
+        j.shL = { x: -22, y: -104 }; j.shR = { x: 22, y: -104 };
         j.elbL = { x: -40, y: -122 }; j.handL = { x: -50, y: -158 + b * 6 };
         j.elbR = { x: 40, y: -122 }; j.handR = { x: 50, y: -158 - b * 6 };
+        j.hipL = { x: -13, y: -56 }; j.hipR = { x: 13, y: -56 };
+        j.kneeL = { x: -15, y: -28 }; j.kneeR = { x: 15, y: -28 };
         j.footL = { x: -16, y: -4 }; j.footR = { x: 16, y: -4 };
         j.tail = -0.75 + Math.sin(t * 2.4) * .3;
         j.mouth = 'grin';
@@ -268,8 +271,12 @@ const Riggy = (() => {
         j.root.y = b * 1.6;
         j.head.y = -150 + b * 2.6; j.head.tilt = Math.sin(t * .8) * .04;
         j.ear.flop = Math.sin(t * 1.6) * .1;
+        j.shL = { x: -21, y: -102 }; j.shR = { x: 21, y: -102 };
         j.elbL = { x: -30, y: -86 }; j.handL = { x: -30, y: -60 + b };
         j.elbR = { x: 30, y: -86 }; j.handR = { x: 30, y: -60 - b };
+        j.hipL = { x: -13, y: -56 }; j.hipR = { x: 13, y: -56 };
+        j.kneeL = { x: -14, y: -28 + b * .5 }; j.kneeR = { x: 14, y: -28 - b * .5 };
+        j.footL = { x: -15, y: -3 }; j.footR = { x: 15, y: -3 };
         j.tail = -0.6 + Math.sin(t * 1.3) * .35;
         j.tailWag = Math.sin(t * 1.3) * .3;
         j.mouth = 'smile';
@@ -417,7 +424,7 @@ const Riggy = (() => {
     const leftHoleX = j.hipL.x * 1.08;
     const rightHoleX = j.hipR.x * 1.08;
     const waistY = -62;
-    const hemY = -34;
+    const hemY = -46;
     const holeWidth = 14;
     const halfWaist = 25;
 

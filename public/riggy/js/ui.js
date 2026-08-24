@@ -344,7 +344,7 @@ const UI = (() => {
       menuCtx.clearRect(0, 0, menuCv.width, menuCv.height);
       const state = (Math.floor(mascotT / 4) % 3 === 1) ? 'cheer' : 'idle';
       Riggy.draw(menuCtx, {
-        x: menuCv.width / 2, y: menuCv.height - 48, scale: 1.72, skinId: Save.d.character,
+        x: menuCv.width / 2, y: menuCv.height - 34, scale: 1.42, skinId: Save.d.character,
         state, t: mascotT, phase: mascotT * 8, view: 'front', shadow: true
       });
     }
