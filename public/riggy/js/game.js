@@ -95,6 +95,8 @@ const Game = (() => {
     let d = base + lvl * per;
     if (kind === 'magnet' && S.perk.magnet) d *= 1.25;
     if (kind === 'jetpack' && S.perk.jetpack) d *= 1.3;
+    if (kind === 'sneakers' && S.perk.sneakers) d *= 1.35;
+    if (kind === 'x2' && S.perk.x2) d *= 1.35;
     return d;
   }
 
