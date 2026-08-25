@@ -401,7 +401,7 @@ const Game = (() => {
     applyPerks();
 
     obstacles = []; coins = []; pickups = []; scenery = []; particles = []; floaters = [];
-    const headStart = (Save.d.upgrades.headstart || 0) * 150 * UNITS_PER_M;
+    const headStart = ((Save.d.upgrades.headstart || 0) * 150 + (S.perk.headstart ? 300 : 0)) * UNITS_PER_M;
 
     Object.assign(S, {
       mode: 'countdown', t: 0,
