@@ -900,6 +900,16 @@ const Riggy = (() => {
         ctx.fillStyle = 'rgba(230,250,255,.85)'; ctx.fill();
       }
     }
+    if (skin.ghostly) {
+      for (let i = 0; i < 4; i++) {
+        const a = t * 2.2 + i * 1.6;
+        const gy = -20 - ((a * 34) % 130);
+        ctx.globalAlpha = .35;
+        U.ellipse(ctx, Math.sin(a * .8) * 30, gy, 16 - i * 2, 7);
+        ctx.fillStyle = U.rgba(skin.glow, .6); ctx.fill();
+        ctx.globalAlpha = 1;
+      }
+    }
 
     ctx.restore();
   }
