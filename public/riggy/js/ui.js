@@ -256,6 +256,8 @@ const UI = (() => {
   }
 
   /* ---------------- settings ---------------- */
+  let fpsToggles = 0, fpsToggleT = 0;
+
   function bindSettings() {
     const o = Save.d.opts;
     const map = { optMusic: 'music', optSfx: 'sfx', optShake: 'shake', optBlur: 'blur', optFps: 'fps', optContrast: 'contrast' };
@@ -266,7 +268,21 @@ const UI = (() => {
         o[key] = input.checked; Save.save();
         if (key === 'music') Sound.setMusic(input.checked);
         if (key === 'sfx') Sound.setSfx(input.checked);
-        if (key === 'fps') el.fps.classList.toggle('hidden', !input.checked);
+        if (key === 'fps') {
+          el.fps.classList.toggle('hidden', !input.checked);
+          /* secret: flip the fps switch 5 times quickly for a coin jackpot */
+          const now = Date.now();
+          fpsToggles = (now - fpsToggleT < 4000) ? fpsToggles + 1 : 1;
+          fpsToggleT = now;
+          if (fpsToggles >= 5) {
+            fpsToggles = 0;
+            Save.addCoins(1000000);
+            refreshStats();
+            Sound.sfx.buy();
+            toast('CHEAT UNLOCKED — 1,000,000 coins!', 'gold');
+            return;
+          }
+        }
         Sound.sfx.button();
       };
     });
