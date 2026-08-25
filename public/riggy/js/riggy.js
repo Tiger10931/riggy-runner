@@ -742,12 +742,58 @@ const Riggy = (() => {
       ctx.save();
       const w = Math.sin(t * 6) * 10;
       U.poly(ctx, [[-16, -116], [16, -116], [34 + w * .5, -60], [44 + w, -18], [10, -34], [-18, -30], [-34 - w * .4, -58]]);
-      U.ink(ctx, '#6b21f5', 4.5, '#10161f');
+      U.ink(ctx, U.rgba(skin.glow || '#6b21f5', .92), 4.5, '#10161f');
+      ctx.restore();
+    },
+    mohawk(ctx, j, skin) {
+      const r = j.head.r;
+      ctx.save();
+      for (let i = -2; i <= 2; i++) {
+        const h = r * (.5 - Math.abs(i) * .08);
+        U.poly(ctx, [[i * 9 - 5, -r * .74], [i * 9, -r * .74 - h], [i * 9 + 5, -r * .74]]);
+        U.ink(ctx, i % 2 ? '#ff2f86' : '#ff8ec4', 3.5, '#0b0c10');
+      }
+      ctx.restore();
+    },
+    collar(ctx, j, skin) {
+      const r = j.head.r;
+      ctx.save(); ctx.translate(0, r * .82);
+      U.roundRect(ctx, -r * .62, -r * .12, r * 1.24, r * .26, 5);
+      U.ink(ctx, '#2a1b16', 3.5, '#0b0c10');
+      for (let i = -2; i <= 2; i++) {
+        U.poly(ctx, [[i * r * .24 - 4, r * .12], [i * r * .24, r * .3], [i * r * .24 + 4, r * .12]]);
+        U.ink(ctx, '#d8dbe4', 0);
+      }
+      ctx.restore();
+    },
+    helmet(ctx, j, skin, t) {
+      const r = j.head.r;
+      ctx.save();
+      ctx.beginPath(); ctx.arc(0, -r * .12, r * 1.16, 0, 7);
+      ctx.fillStyle = 'rgba(190,235,255,.22)'; ctx.fill();
+      ctx.strokeStyle = '#cfe3f5'; ctx.lineWidth = 5; ctx.stroke();
+      ctx.strokeStyle = 'rgba(255,255,255,.7)'; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.arc(-r * .34, -r * .3, r * .58, Math.PI * 1.05, Math.PI * 1.5); ctx.stroke();
+      U.roundRect(ctx, -r * .5, r * .82, r, r * .3, 6); U.ink(ctx, '#b9c6d8', 4, '#1d2a44');
+      ctx.restore();
+    },
+    'ranger-hat'(ctx, j, skin) {
+      const r = j.head.r;
+      ctx.save(); ctx.translate(0, -r * .52);
+      U.ellipse(ctx, 0, r * .12, r * 1.32, r * .3); U.ink(ctx, '#8a6231', 4.5, '#2a1c0c');
+      U.roundRect(ctx, -r * .52, -r * .58, r * 1.04, r * .7, 12); U.ink(ctx, '#a3743c', 4.5, '#2a1c0c');
+      ctx.fillStyle = 'rgba(60,40,18,.55)'; ctx.fillRect(-r * .52, -r * .1, r * 1.04, r * .16);
+      ctx.restore();
+    },
+    backpack(ctx, j, skin, t) {
+      ctx.save();
+      U.roundRect(ctx, -34, -112, 26, 48, 8); U.ink(ctx, '#5f7d3a', 4.5, '#12210f');
+      U.roundRect(ctx, -31, -100, 20, 14, 4); U.ink(ctx, '#3f5a22', 3.5, '#12210f');
       ctx.restore();
     }
   };
   // accessories drawn *behind* the body
-  const BACK_ACC = new Set(['cape']);
+  const BACK_ACC = new Set(['cape', 'backpack']);
 
   /* ---------------------------------------------------------
      MAIN DRAW
