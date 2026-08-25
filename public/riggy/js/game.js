@@ -514,7 +514,9 @@ const Game = (() => {
   }
 
   /* ---- second chance: pay coins to keep the run alive ---- */
-  function reviveCost() { return 250 * Math.pow(2, S.reviveCount || 0); }
+  function reviveCost() {
+    return Math.round(250 * Math.pow(2, S.reviveCount || 0) * (S.perk && S.perk.cheaprevive ? .5 : 1));
+  }
 
   function revive() {
     if (S.mode !== 'dead') return false;
