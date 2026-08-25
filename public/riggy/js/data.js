@@ -80,8 +80,12 @@ const CHARACTERS = [
   { id: 'retro', name: 'Retro Riggy', price: 3500, desc: '8-bit soul, 128-bit attitude. Ships with headphones nobody has ever seen him remove.', perk: 'Perk: score multipliers build 20% faster.', perkKey: 'combo' },
   { id: 'frost', name: 'Frost Riggy', price: 5000, desc: 'Chilled to exactly the right temperature. Leaves a trail of snowflakes and mild regret.', perk: 'Perk: start each run with a bubble shield.', perkKey: 'shield' },
   { id: 'inferno', name: 'Inferno Riggy', price: 7500, desc: 'Runs so fast the track complains. Goggles are non-negotiable safety equipment.', perk: 'Perk: jetpacks burn 30% longer.', perkKey: 'jetpack' },
+  { id: 'punk', name: 'Punk Riggy', price: 6000, desc: 'Studded collar, mohawk, three chords and a lane change. Volume knob welded to eleven.', perk: 'Perk: super sneakers last 35% longer.', perkKey: 'sneakers' },
+  { id: 'cadet', name: 'Cadet Riggy', price: 8500, desc: 'Fishbowl helmet, zero training. Claims the track is technically a low orbit.', perk: 'Perk: x2 score windows last 35% longer.', perkKey: 'x2' },
   { id: 'shadow', name: 'Shadow Riggy', price: 10000, desc: 'A rumour with a cape. Nobody is sure he is actually there until you check the leaderboard.', perk: 'Perk: near-miss combos are worth double.', perkKey: 'near' },
-  { id: 'golden', name: 'Golden Riggy', price: 20000, desc: 'The trophy version. Every coin you touch feels personally flattered.', perk: 'Perk: +25% coin value, always.', perkKey: 'coins' }
+  { id: 'ranger', name: 'Ranger Riggy', price: 12000, desc: 'Wide-brim hat, sensible backpack, encyclopedic knowledge of every shortcut in the canyon.', perk: 'Perk: every run starts 300m down the track.', perkKey: 'headstart' },
+  { id: 'golden', name: 'Golden Riggy', price: 20000, desc: 'The trophy version. Every coin you touch feels personally flattered.', perk: 'Perk: +25% coin value, always.', perkKey: 'coins' },
+  { id: 'phantom', name: 'Phantom Riggy', price: 30000, desc: 'Half here, half elsewhere. Death is more of a scheduling conflict than an ending.', perk: 'Perk: second chances cost half as many coins.', perkKey: 'cheaprevive' }
 ];
 
 /* ============================================================

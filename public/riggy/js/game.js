@@ -95,6 +95,8 @@ const Game = (() => {
     let d = base + lvl * per;
     if (kind === 'magnet' && S.perk.magnet) d *= 1.25;
     if (kind === 'jetpack' && S.perk.jetpack) d *= 1.3;
+    if (kind === 'sneakers' && S.perk.sneakers) d *= 1.35;
+    if (kind === 'x2' && S.perk.x2) d *= 1.35;
     return d;
   }
 
@@ -399,7 +401,7 @@ const Game = (() => {
     applyPerks();
 
     obstacles = []; coins = []; pickups = []; scenery = []; particles = []; floaters = [];
-    const headStart = (Save.d.upgrades.headstart || 0) * 150 * UNITS_PER_M;
+    const headStart = ((Save.d.upgrades.headstart || 0) * 150 + (S.perk.headstart ? 300 : 0)) * UNITS_PER_M;
 
     Object.assign(S, {
       mode: 'countdown', t: 0,
@@ -512,7 +514,9 @@ const Game = (() => {
   }
 
   /* ---- second chance: pay coins to keep the run alive ---- */
-  function reviveCost() { return 250 * Math.pow(2, S.reviveCount || 0); }
+  function reviveCost() {
+    return Math.round(250 * Math.pow(2, S.reviveCount || 0) * (S.perk && S.perk.cheaprevive ? .5 : 1));
+  }
 
   function revive() {
     if (S.mode !== 'dead') return false;
