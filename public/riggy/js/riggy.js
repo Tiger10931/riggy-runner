@@ -88,6 +88,40 @@ const Riggy = (() => {
       eye: '#fff3c2', pupil: '#3a1200', outline: '#4a1a00',
       glow: '#ff7a2f', flames: true,
       accessories: ['goggles']
+    },
+    punk: {
+      name: 'Punk Riggy',
+      body: '#3d3f4d', bodyLo: '#22242e', bodyHi: '#7b7f95',
+      shorts: '#c8102e', shortsLo: '#7a0a1c',
+      glove: '#1b1c22', shoe: '#f2ede1', shoeLo: '#bdb6a5',
+      eye: '#ffffff', pupil: '#0b0c10', outline: '#0b0c10',
+      accessories: ['mohawk', 'collar']
+    },
+    cadet: {
+      name: 'Cadet Riggy',
+      body: '#e9eef6', bodyLo: '#a8b3c4', bodyHi: '#ffffff',
+      shorts: '#2b3f8c', shortsLo: '#16255c',
+      glove: '#cfd8e6', shoe: '#d7dee9', shoeLo: '#9aa4b4',
+      eye: '#ffffff', pupil: '#132038', outline: '#1d2a44',
+      glow: '#9fd8ff',
+      accessories: ['helmet']
+    },
+    ranger: {
+      name: 'Ranger Riggy',
+      body: '#3f7d4f', bodyLo: '#245134', bodyHi: '#84c993',
+      shorts: '#a3743c', shortsLo: '#6a4720',
+      glove: '#efe3c8', shoe: '#6b4a2a', shoeLo: '#402a15',
+      eye: '#ffffff', pupil: '#14210f', outline: '#12210f',
+      accessories: ['ranger-hat', 'backpack']
+    },
+    phantom: {
+      name: 'Phantom Riggy',
+      body: '#7ff0e0', bodyLo: '#2c7f79', bodyHi: '#e2fffb',
+      shorts: '#1c2a3f', shortsLo: '#0c1523',
+      glove: '#d8fffa', shoe: '#d8fffa', shoeLo: '#9ac9c4',
+      eye: '#eafffd', pupil: '#0b2b2c', outline: '#123536',
+      glow: '#7ff0e0', ghostly: true,
+      accessories: ['cape']
     }
   };
 
