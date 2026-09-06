@@ -162,7 +162,7 @@ const Riggy = (() => {
         j.ear.l = -0.16 - s * .07; j.ear.r = 0.16 - s * .07;
 
         // legs — big loping stride
-        const strideF = 30, lift = 26;
+        const strideF = 24, lift = 24;
         j.footL.x = -13 + s * strideF;
         j.footL.y = -4 - Math.max(0, s) * lift;
         j.kneeL.x = -14 + s * strideF * .55;
@@ -454,13 +454,19 @@ const Riggy = (() => {
     ctx.save();
     ctx.lineJoin = 'round'; ctx.lineCap = 'round';
 
-    // thigh positions from the pose solver so the holes frame the legs
-    const leftHoleX = j.hipL.x * 1.08;
-    const rightHoleX = j.hipR.x * 1.08;
+    // thigh positions from the pose solver so the holes frame the legs;
+    // track partway toward the knees so the openings stay over the thighs
+    // even mid-stride (otherwise the leg pops out from behind the fabric)
     const waistY = -62;
     const hemY = -46;
     const holeWidth = 14;
     const halfWaist = 25;
+    const track = (hip, knee) => U.clamp(
+      hip.x + ((knee ? knee.x : hip.x) - hip.x) * .45,
+      -halfWaist + holeWidth - 2, halfWaist - holeWidth + 2
+    );
+    const leftHoleX = track(j.hipL, j.kneeL);
+    const rightHoleX = track(j.hipR, j.kneeR);
 
     // main shorts shape with fabric bulging around the legs
     ctx.beginPath();
