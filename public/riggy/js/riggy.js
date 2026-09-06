@@ -139,7 +139,7 @@ const Riggy = (() => {
       head: { x: 0, y: -120, r: 42, tilt: 0, turn: extra.turn || 0 },
       ear: { l: -0.12, r: 0.12, flop: 0 },
       torso: { x: 0, y: -88 },
-      hipL: { x: -12, y: -27 }, hipR: { x: 12, y: -46 },
+      hipL: { x: -12, y: -54 }, hipR: { x: 12, y: -54 },
       kneeL: { x: -14, y: -21 }, kneeR: { x: 14, y: -26 },
       footL: { x: -14, y: -2 }, footR: { x: 14, y: -4 },
       shL: { x: -20, y: -84 }, shR: { x: 20, y: -104 },
@@ -161,17 +161,23 @@ const Riggy = (() => {
         j.ear.flop = -s * .30;
         j.ear.l = -0.16 - s * .07; j.ear.r = 0.16 - s * .07;
 
-        // legs — big loping stride
-        const strideF = 24, lift = 24;
+        // Legs — both thighs begin inside the shorts and remain anchored there
+        // while the knees and feet swing. This prevents either leg appearing
+        // detached when it reaches the front or back of the stride.
+        const strideF = 22, lift = 22;
+        const hipSway = s * 2;
+        const hipRise = Math.cos(p * 2) * 1.5;
+        j.hipL = { x: -12 + hipSway, y: -54 + hipRise };
+        j.hipR = { x: 12 - hipSway, y: -54 - hipRise };
         j.footL.x = -13 + s * strideF;
         j.footL.y = -4 - Math.max(0, s) * lift;
-        j.kneeL.x = -14 + s * strideF * .55;
-        j.kneeL.y = -26 - Math.max(0, s) * lift * .55 - Math.max(0, -s) * 6;
+        j.kneeL.x = -14 + s * strideF * .52;
+        j.kneeL.y = -27 - Math.max(0, s) * lift * .5 - Math.max(0, -s) * 5;
 
         j.footR.x = 13 - s * strideF;
         j.footR.y = -4 - Math.max(0, -s) * lift;
-        j.kneeR.x = 14 - s * strideF * .55;
-        j.kneeR.y = -26 - Math.max(0, -s) * lift * .55 - Math.max(0, s) * 6;
+        j.kneeR.x = 14 - s * strideF * .52;
+        j.kneeR.y = -27 - Math.max(0, -s) * lift * .5 - Math.max(0, s) * 5;
 
         // arms — counter swing
         j.handL.x = -26 - s * 8; j.handL.y = -66 - s * 26;
