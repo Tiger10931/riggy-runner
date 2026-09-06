@@ -213,17 +213,18 @@ const Riggy = (() => {
       }
 
       case 'roll': {
-        j.rot = extra.rollT * Math.PI * 2.2;
-        j.root.y = -22; j.squash = .82;
-        j.head.y = -78; j.head.r = 42; j.head.tilt = .2;
-        j.ear.flop = -1.15; j.ear.l = -.5; j.ear.r = .55;
-        j.torso.y = -60;
-        j.hipL = { x: -12, y: -40 }; j.hipR = { x: 12, y: -40 };
-        j.kneeL = { x: -26, y: -58 }; j.kneeR = { x: 26, y: -56 };
-        j.footL = { x: -8, y: -74 }; j.footR = { x: 10, y: -76 };
-        j.shL = { x: -18, y: -62 }; j.shR = { x: 18, y: -62 };
-        j.elbL = { x: -34, y: -46 }; j.handL = { x: -16, y: -34 };
-        j.elbR = { x: 34, y: -46 }; j.handR = { x: 16, y: -34 };
+        // tight cannonball: one clean flip, limbs tucked inside the silhouette
+        j.rot = extra.rollT * Math.PI * 2;
+        j.root.y = -24; j.squash = .9; j.lean = 0;
+        j.head.y = -66; j.head.r = 40; j.head.tilt = .1;
+        j.ear.flop = -1.3; j.ear.l = -.3; j.ear.r = .3;
+        j.torso.y = -54;
+        j.hipL = { x: -11, y: -42 }; j.hipR = { x: 11, y: -42 };
+        j.kneeL = { x: -16, y: -62 }; j.kneeR = { x: 16, y: -62 };
+        j.footL = { x: -10, y: -50 }; j.footR = { x: 10, y: -50 };
+        j.shL = { x: -16, y: -56 }; j.shR = { x: 16, y: -56 };
+        j.elbL = { x: -20, y: -44 }; j.handL = { x: -9, y: -40 };
+        j.elbR = { x: 20, y: -44 }; j.handR = { x: 9, y: -40 };
         j.tail = -1.7;
         j.mouth = 'grit';
         break;
