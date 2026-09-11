@@ -129,6 +129,7 @@ const Riggy = (() => {
       shorts: '#2f6fd0', shortsLo: '#1a4587',
       glove: '#e8c79a', shoe: '#3a4a5e', shoeLo: '#232f3d',
       eye: '#ffffff', pupil: '#1b1006', outline: '#241505',
+      flatTail: true, roundEars: true,
       accessories: ['beaver-tail', 'tee', 'buck-teeth']
     }
   };
@@ -1010,11 +1011,24 @@ const Riggy = (() => {
     const skin = SKINS[skinId] || SKINS.classic;
     const j = solve('idle', t, 0, { turn: 1 });
     ctx.save(); ctx.translate(cx, cy); ctx.scale(r / 42, r / 42);
-    tail(ctx, -0.6, Math.sin(t) * .3, skin, 1);
-    ear(ctx, -14, -j.head.r * .78, 62, 15, -.18 + Math.sin(t) * .05, 0, skin);
-    ear(ctx, 15, -j.head.r * .78, 66, 15, .18 + Math.sin(t) * .05, 0, skin);
+    if (skin.flatTail) {
+      ctx.save(); ctx.translate(-30, 26); ctx.rotate(-.5);
+      U.roundRect(ctx, -34, -13, 40, 28, 12); U.ink(ctx, '#6b4423', 4.5, skin.outline);
+      ctx.restore();
+    } else {
+      tail(ctx, -0.6, Math.sin(t) * .3, skin, 1);
+    }
+    if (skin.roundEars) {
+      [-1, 1].forEach(s => {
+        U.ellipse(ctx, s * j.head.r * .82, -j.head.r * .5, 13, 14);
+        U.ink(ctx, skin.body, 5, skin.outline);
+      });
+    } else {
+      ear(ctx, -14, -j.head.r * .78, 62, 15, -.18 + Math.sin(t) * .05, 0, skin);
+      ear(ctx, 15, -j.head.r * .78, 66, 15, .18 + Math.sin(t) * .05, 0, skin);
+    }
     face(ctx, j, skin, t);
-    skin.accessories.filter(a => !BACK_ACC.has(a)).forEach(a => ACC[a] && ACC[a](ctx, j, skin, t));
+    skin.accessories.filter(a => !BACK_ACC.has(a) && !TORSO_ACC.has(a)).forEach(a => ACC[a] && ACC[a](ctx, j, skin, t));
     ctx.restore();
   }
 
