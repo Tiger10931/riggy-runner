@@ -921,7 +921,7 @@ const Riggy = (() => {
     }
 
     // --- behind-the-body layer
-    tail(ctx, j.tail, j.tailWag, skin, 1);
+    if (!skin.flatTail) tail(ctx, j.tail, j.tailWag, skin, 1);
     skin.accessories.filter(a => BACK_ACC.has(a)).forEach(a => ACC[a] && ACC[a](ctx, j, skin, t));
 
     // far limbs (right side reads as "far" from our 3/4 view)
@@ -936,6 +936,7 @@ const Riggy = (() => {
 
     // body
     torso(ctx, j, skin);
+    skin.accessories.filter(a => TORSO_ACC.has(a)).forEach(a => ACC[a] && ACC[a](ctx, j, skin, t));
     shorts(ctx, skin, j);
 
     // near arm — in front of the torso
@@ -946,10 +947,19 @@ const Riggy = (() => {
     ctx.save();
     ctx.translate(j.head.x, j.head.y);
     ctx.rotate(j.head.tilt);
-    ear(ctx, -14, -j.head.r * .78, 62, 15, j.ear.l, j.ear.flop, skin);
-    ear(ctx, 15, -j.head.r * .78, 66, 15, j.ear.r, j.ear.flop * .86, skin);
+    if (skin.roundEars) {
+      [-1, 1].forEach(s => {
+        U.ellipse(ctx, s * j.head.r * .82, -j.head.r * .5, 13, 14);
+        U.ink(ctx, skin.body, 5, skin.outline);
+        U.ellipse(ctx, s * j.head.r * .82, -j.head.r * .5, 6, 7);
+        ctx.fillStyle = U.rgba(skin.bodyLo, .7); ctx.fill();
+      });
+    } else {
+      ear(ctx, -14, -j.head.r * .78, 62, 15, j.ear.l, j.ear.flop, skin);
+      ear(ctx, 15, -j.head.r * .78, 66, 15, j.ear.r, j.ear.flop * .86, skin);
+    }
     face(ctx, j, skin, t);
-    skin.accessories.filter(a => !BACK_ACC.has(a)).forEach(a => ACC[a] && ACC[a](ctx, j, skin, t));
+    skin.accessories.filter(a => !BACK_ACC.has(a) && !TORSO_ACC.has(a)).forEach(a => ACC[a] && ACC[a](ctx, j, skin, t));
     ctx.restore();
 
     // front-of-body accessories that live on the torso
