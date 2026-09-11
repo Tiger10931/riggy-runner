@@ -85,7 +85,8 @@ const CHARACTERS = [
   { id: 'shadow', name: 'Shadow Riggy', price: 10000, desc: 'A rumour with a cape. Nobody is sure he is actually there until you check the leaderboard.', perk: 'Perk: near-miss combos are worth double.', perkKey: 'near' },
   { id: 'ranger', name: 'Ranger Riggy', price: 12000, desc: 'Wide-brim hat, sensible backpack, encyclopedic knowledge of every shortcut in the canyon.', perk: 'Perk: every run starts 300m down the track.', perkKey: 'headstart' },
   { id: 'golden', name: 'Golden Riggy', price: 20000, desc: 'The trophy version. Every coin you touch feels personally flattered.', perk: 'Perk: +25% coin value, always.', perkKey: 'coins' },
-  { id: 'phantom', name: 'Phantom Riggy', price: 30000, desc: 'Half here, half elsewhere. Death is more of a scheduling conflict than an ending.', perk: 'Perk: second chances cost half as many coins.', perkKey: 'cheaprevive' }
+  { id: 'phantom', name: 'Phantom Riggy', price: 30000, desc: 'Half here, half elsewhere. Death is more of a scheduling conflict than an ending.', perk: 'Perk: second chances cost half as many coins.', perkKey: 'cheaprevive' },
+  { id: 'billy', name: 'Billy the Beaver', price: 9000, desc: "Riggy's neighbour from the river bend. Green tee, denim shorts, teeth that could fell a signpost.", perk: 'Perk: every power-up lasts 15% longer.', perkKey: 'gnaw' }
 ];
 
 /* ============================================================
