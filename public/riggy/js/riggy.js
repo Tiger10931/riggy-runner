@@ -129,6 +129,7 @@ const Riggy = (() => {
       shorts: '#2f6fd0', shortsLo: '#1a4587',
       glove: '#e8c79a', shoe: '#3a4a5e', shoeLo: '#232f3d',
       eye: '#ffffff', pupil: '#1b1006', outline: '#241505',
+      flatTail: true, roundEars: true,
       accessories: ['beaver-tail', 'tee', 'buck-teeth']
     }
   };
@@ -830,15 +831,33 @@ const Riggy = (() => {
     },
     tee(ctx, j, skin) {
       ctx.save();
-      const sl = j.shoulderL, sr = j.shoulderR, hl = j.hipL, hr = j.hipR;
-      const top = Math.min(sl.y, sr.y) + 4, bot = (hl.y + hr.y) / 2 + 2;
-      const w = Math.max(Math.abs(sl.x - sr.x) + 16, 34);
-      U.roundRect(ctx, -w / 2, top, w, bot - top, 9);
-      U.ink(ctx, '#2fa84f', 4.5, skin.outline);
+      ctx.lineJoin = 'round';
+      const top = Math.min(j.shL.y, j.shR.y) + 6;
+      const bot = -58;
+      const halfTop = 24, halfBot = 27;
+      ctx.beginPath();
+      ctx.moveTo(-halfTop, top);
+      ctx.quadraticCurveTo(-halfTop - 4, (top + bot) / 2, -halfBot, bot);
+      ctx.quadraticCurveTo(0, bot + 5, halfBot, bot);
+      ctx.quadraticCurveTo(halfTop + 4, (top + bot) / 2, halfTop, top);
+      ctx.quadraticCurveTo(0, top - 7, -halfTop, top);
+      ctx.closePath();
+      U.ink(ctx, '#2fa84f', 5, skin.outline);
+      ctx.save(); ctx.clip();
       ctx.fillStyle = 'rgba(255,255,255,.16)';
-      ctx.fillRect(-w / 2 + 5, top + 5, w * .22, (bot - top) * .7);
-      ctx.strokeStyle = U.rgba('#1c6f34', .8); ctx.lineWidth = 3;
-      ctx.beginPath(); ctx.moveTo(-w * .18, top + 2); ctx.quadraticCurveTo(0, top + 9, w * .18, top + 2); ctx.stroke();
+      ctx.fillRect(-halfTop, top, 11, bot - top);
+      ctx.fillStyle = U.rgba('#1c6f34', .5);
+      ctx.fillRect(halfTop - 12, top, 14, bot - top);
+      ctx.restore();
+      // collar
+      ctx.beginPath();
+      ctx.moveTo(-11, top + 1); ctx.quadraticCurveTo(0, top + 9, 11, top + 1);
+      ctx.strokeStyle = U.rgba(skin.outline, .7); ctx.lineWidth = 4; ctx.stroke();
+      // short sleeves
+      [[-1, j.shL], [1, j.shR]].forEach(([s, sh]) => {
+        U.ellipse(ctx, s * (halfTop - 3), top + 9, 9, 11);
+        U.ink(ctx, '#2fa84f', 4.2, skin.outline);
+      });
       ctx.restore();
     },
     'buck-teeth'(ctx, j, skin) {
@@ -855,6 +874,8 @@ const Riggy = (() => {
   };
   // accessories drawn *behind* the body
   const BACK_ACC = new Set(['cape', 'backpack', 'beaver-tail']);
+  // accessories drawn on the torso, not in the head group
+  const TORSO_ACC = new Set(['tee']);
 
   /* ---------------------------------------------------------
      MAIN DRAW
@@ -901,7 +922,7 @@ const Riggy = (() => {
     }
 
     // --- behind-the-body layer
-    tail(ctx, j.tail, j.tailWag, skin, 1);
+    if (!skin.flatTail) tail(ctx, j.tail, j.tailWag, skin, 1);
     skin.accessories.filter(a => BACK_ACC.has(a)).forEach(a => ACC[a] && ACC[a](ctx, j, skin, t));
 
     // far limbs (right side reads as "far" from our 3/4 view)
@@ -916,6 +937,7 @@ const Riggy = (() => {
 
     // body
     torso(ctx, j, skin);
+    skin.accessories.filter(a => TORSO_ACC.has(a)).forEach(a => ACC[a] && ACC[a](ctx, j, skin, t));
     shorts(ctx, skin, j);
 
     // near arm — in front of the torso
@@ -926,10 +948,19 @@ const Riggy = (() => {
     ctx.save();
     ctx.translate(j.head.x, j.head.y);
     ctx.rotate(j.head.tilt);
-    ear(ctx, -14, -j.head.r * .78, 62, 15, j.ear.l, j.ear.flop, skin);
-    ear(ctx, 15, -j.head.r * .78, 66, 15, j.ear.r, j.ear.flop * .86, skin);
+    if (skin.roundEars) {
+      [-1, 1].forEach(s => {
+        U.ellipse(ctx, s * j.head.r * .82, -j.head.r * .5, 13, 14);
+        U.ink(ctx, skin.body, 5, skin.outline);
+        U.ellipse(ctx, s * j.head.r * .82, -j.head.r * .5, 6, 7);
+        ctx.fillStyle = U.rgba(skin.bodyLo, .7); ctx.fill();
+      });
+    } else {
+      ear(ctx, -14, -j.head.r * .78, 62, 15, j.ear.l, j.ear.flop, skin);
+      ear(ctx, 15, -j.head.r * .78, 66, 15, j.ear.r, j.ear.flop * .86, skin);
+    }
     face(ctx, j, skin, t);
-    skin.accessories.filter(a => !BACK_ACC.has(a)).forEach(a => ACC[a] && ACC[a](ctx, j, skin, t));
+    skin.accessories.filter(a => !BACK_ACC.has(a) && !TORSO_ACC.has(a)).forEach(a => ACC[a] && ACC[a](ctx, j, skin, t));
     ctx.restore();
 
     // front-of-body accessories that live on the torso
@@ -980,11 +1011,24 @@ const Riggy = (() => {
     const skin = SKINS[skinId] || SKINS.classic;
     const j = solve('idle', t, 0, { turn: 1 });
     ctx.save(); ctx.translate(cx, cy); ctx.scale(r / 42, r / 42);
-    tail(ctx, -0.6, Math.sin(t) * .3, skin, 1);
-    ear(ctx, -14, -j.head.r * .78, 62, 15, -.18 + Math.sin(t) * .05, 0, skin);
-    ear(ctx, 15, -j.head.r * .78, 66, 15, .18 + Math.sin(t) * .05, 0, skin);
+    if (skin.flatTail) {
+      ctx.save(); ctx.translate(-30, 26); ctx.rotate(-.5);
+      U.roundRect(ctx, -34, -13, 40, 28, 12); U.ink(ctx, '#6b4423', 4.5, skin.outline);
+      ctx.restore();
+    } else {
+      tail(ctx, -0.6, Math.sin(t) * .3, skin, 1);
+    }
+    if (skin.roundEars) {
+      [-1, 1].forEach(s => {
+        U.ellipse(ctx, s * j.head.r * .82, -j.head.r * .5, 13, 14);
+        U.ink(ctx, skin.body, 5, skin.outline);
+      });
+    } else {
+      ear(ctx, -14, -j.head.r * .78, 62, 15, -.18 + Math.sin(t) * .05, 0, skin);
+      ear(ctx, 15, -j.head.r * .78, 66, 15, .18 + Math.sin(t) * .05, 0, skin);
+    }
     face(ctx, j, skin, t);
-    skin.accessories.filter(a => !BACK_ACC.has(a)).forEach(a => ACC[a] && ACC[a](ctx, j, skin, t));
+    skin.accessories.filter(a => !BACK_ACC.has(a) && !TORSO_ACC.has(a)).forEach(a => ACC[a] && ACC[a](ctx, j, skin, t));
     ctx.restore();
   }
 
