@@ -122,6 +122,14 @@ const Riggy = (() => {
       eye: '#eafffd', pupil: '#0b2b2c', outline: '#123536',
       glow: '#7ff0e0', ghostly: true,
       accessories: ['cape']
+    },
+    billy: {
+      name: 'Billy the Beaver',
+      body: '#8b5a2b', bodyLo: '#5a3617', bodyHi: '#c68a4e',
+      shorts: '#2f6fd0', shortsLo: '#1a4587',
+      glove: '#e8c79a', shoe: '#3a4a5e', shoeLo: '#232f3d',
+      eye: '#ffffff', pupil: '#1b1006', outline: '#241505',
+      accessories: ['beaver-tail', 'tee', 'buck-teeth']
     }
   };
 
@@ -803,10 +811,50 @@ const Riggy = (() => {
       U.roundRect(ctx, -34, -112, 26, 48, 8); U.ink(ctx, '#5f7d3a', 4.5, '#12210f');
       U.roundRect(ctx, -31, -100, 20, 14, 4); U.ink(ctx, '#3f5a22', 3.5, '#12210f');
       ctx.restore();
+    },
+    'beaver-tail'(ctx, j, skin, t) {
+      ctx.save();
+      const sway = Math.sin(t * 6) * 8;
+      ctx.translate(-4, -46);
+      ctx.rotate(-0.35 + sway * 0.012);
+      U.roundRect(ctx, -46, -16, 46, 34, 14);
+      U.ink(ctx, '#6b4423', 4.5, skin.outline);
+      ctx.strokeStyle = U.rgba('#3d2410', .55); ctx.lineWidth = 2.2;
+      for (let i = -1; i <= 1; i++) {
+        ctx.beginPath(); ctx.moveTo(-44, i * 9); ctx.lineTo(-4, i * 9); ctx.stroke();
+      }
+      for (let i = -2; i <= 1; i++) {
+        ctx.beginPath(); ctx.moveTo(i * 11 - 12, -14); ctx.lineTo(i * 11 - 12, 14); ctx.stroke();
+      }
+      ctx.restore();
+    },
+    tee(ctx, j, skin) {
+      ctx.save();
+      const sl = j.shoulderL, sr = j.shoulderR, hl = j.hipL, hr = j.hipR;
+      const top = Math.min(sl.y, sr.y) + 4, bot = (hl.y + hr.y) / 2 + 2;
+      const w = Math.max(Math.abs(sl.x - sr.x) + 16, 34);
+      U.roundRect(ctx, -w / 2, top, w, bot - top, 9);
+      U.ink(ctx, '#2fa84f', 4.5, skin.outline);
+      ctx.fillStyle = 'rgba(255,255,255,.16)';
+      ctx.fillRect(-w / 2 + 5, top + 5, w * .22, (bot - top) * .7);
+      ctx.strokeStyle = U.rgba('#1c6f34', .8); ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.moveTo(-w * .18, top + 2); ctx.quadraticCurveTo(0, top + 9, w * .18, top + 2); ctx.stroke();
+      ctx.restore();
+    },
+    'buck-teeth'(ctx, j, skin) {
+      const r = j.head.r, turn = j.head.turn;
+      if (turn < -0.2 || j.mouth === 'x') return;
+      ctx.save();
+      ctx.translate(turn * r * .16, -r * .10 + r * .52);
+      U.roundRect(ctx, -r * .15, 0, r * .30, r * .26, 3);
+      U.ink(ctx, '#fffaf0', 3.2, skin.outline);
+      ctx.strokeStyle = U.rgba(skin.outline, .7); ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(0, r * .02); ctx.lineTo(0, r * .24); ctx.stroke();
+      ctx.restore();
     }
   };
   // accessories drawn *behind* the body
-  const BACK_ACC = new Set(['cape', 'backpack']);
+  const BACK_ACC = new Set(['cape', 'backpack', 'beaver-tail']);
 
   /* ---------------------------------------------------------
      MAIN DRAW
