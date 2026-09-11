@@ -830,15 +830,33 @@ const Riggy = (() => {
     },
     tee(ctx, j, skin) {
       ctx.save();
-      const sl = j.shoulderL, sr = j.shoulderR, hl = j.hipL, hr = j.hipR;
-      const top = Math.min(sl.y, sr.y) + 4, bot = (hl.y + hr.y) / 2 + 2;
-      const w = Math.max(Math.abs(sl.x - sr.x) + 16, 34);
-      U.roundRect(ctx, -w / 2, top, w, bot - top, 9);
-      U.ink(ctx, '#2fa84f', 4.5, skin.outline);
+      ctx.lineJoin = 'round';
+      const top = Math.min(j.shL.y, j.shR.y) + 6;
+      const bot = -58;
+      const halfTop = 24, halfBot = 27;
+      ctx.beginPath();
+      ctx.moveTo(-halfTop, top);
+      ctx.quadraticCurveTo(-halfTop - 4, (top + bot) / 2, -halfBot, bot);
+      ctx.quadraticCurveTo(0, bot + 5, halfBot, bot);
+      ctx.quadraticCurveTo(halfTop + 4, (top + bot) / 2, halfTop, top);
+      ctx.quadraticCurveTo(0, top - 7, -halfTop, top);
+      ctx.closePath();
+      U.ink(ctx, '#2fa84f', 5, skin.outline);
+      ctx.save(); ctx.clip();
       ctx.fillStyle = 'rgba(255,255,255,.16)';
-      ctx.fillRect(-w / 2 + 5, top + 5, w * .22, (bot - top) * .7);
-      ctx.strokeStyle = U.rgba('#1c6f34', .8); ctx.lineWidth = 3;
-      ctx.beginPath(); ctx.moveTo(-w * .18, top + 2); ctx.quadraticCurveTo(0, top + 9, w * .18, top + 2); ctx.stroke();
+      ctx.fillRect(-halfTop, top, 11, bot - top);
+      ctx.fillStyle = U.rgba('#1c6f34', .5);
+      ctx.fillRect(halfTop - 12, top, 14, bot - top);
+      ctx.restore();
+      // collar
+      ctx.beginPath();
+      ctx.moveTo(-11, top + 1); ctx.quadraticCurveTo(0, top + 9, 11, top + 1);
+      ctx.strokeStyle = U.rgba(skin.outline, .7); ctx.lineWidth = 4; ctx.stroke();
+      // short sleeves
+      [[-1, j.shL], [1, j.shR]].forEach(([s, sh]) => {
+        U.ellipse(ctx, s * (halfTop - 3), top + 9, 9, 11);
+        U.ink(ctx, '#2fa84f', 4.2, skin.outline);
+      });
       ctx.restore();
     },
     'buck-teeth'(ctx, j, skin) {
