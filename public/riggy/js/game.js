@@ -97,6 +97,7 @@ const Game = (() => {
     if (kind === 'jetpack' && S.perk.jetpack) d *= 1.3;
     if (kind === 'sneakers' && S.perk.sneakers) d *= 1.35;
     if (kind === 'x2' && S.perk.x2) d *= 1.35;
+    if (S.perk.gnaw) d *= 1.15;
     return d;
   }
 
