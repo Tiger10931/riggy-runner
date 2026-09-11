@@ -873,6 +873,8 @@ const Riggy = (() => {
   };
   // accessories drawn *behind* the body
   const BACK_ACC = new Set(['cape', 'backpack', 'beaver-tail']);
+  // accessories drawn on the torso, not in the head group
+  const TORSO_ACC = new Set(['tee']);
 
   /* ---------------------------------------------------------
      MAIN DRAW
