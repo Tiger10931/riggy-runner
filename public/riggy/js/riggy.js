@@ -888,7 +888,6 @@ const Riggy = (() => {
       ctx.quadraticCurveTo(-27, 22, -2, 9);
       ctx.closePath();
       U.ink(ctx, '#6b4423', 4.5, skin.outline);
-      U.ink(ctx, '#6b4423', 4.5, skin.outline);
       ctx.strokeStyle = U.rgba('#3d2410', .55); ctx.lineWidth = 2.2;
       ctx.beginPath(); ctx.moveTo(-45, -10); ctx.lineTo(-8, 9); ctx.stroke();
       ctx.beginPath(); ctx.moveTo(-51, 1); ctx.lineTo(-15, 16); ctx.stroke();
