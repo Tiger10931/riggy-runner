@@ -127,7 +127,7 @@ const Riggy = (() => {
       name: 'Billy the Beaver',
       body: '#8a4f25', bodyLo: '#543016', bodyHi: '#bd7540',
       shorts: '#2f6fd0', shortsLo: '#1a4587',
-      glove: '#8a4f25', shoe: '#263b57', shoeLo: '#172438',
+      glove: '#8a4f25', shoe: '#5c3218', shoeLo: '#351b0c',
       eye: '#ffffff', pupil: '#1b1006', outline: '#241505',
       flatTail: true, roundEars: true, beaver: true,
       accessories: ['beaver-tail', 'tee', 'buck-teeth']
@@ -572,17 +572,54 @@ const Riggy = (() => {
   }
 
   function beaverTorso(ctx, skin) {
-    // Billy is broad and compact, matching his square T-shirt silhouette.
+    // Billy's compact body sits completely inside his boxy T-shirt.
     ctx.beginPath();
-    ctx.moveTo(-18, -116);
-    ctx.quadraticCurveTo(0, -122, 18, -116);
-    ctx.quadraticCurveTo(29, -103, 28, -82);
-    ctx.lineTo(24, -58);
-    ctx.lineTo(-24, -58);
-    ctx.quadraticCurveTo(-28, -82, -28, -98);
-    ctx.quadraticCurveTo(-27, -108, -18, -116);
+    ctx.moveTo(-19, -111);
+    ctx.quadraticCurveTo(0, -117, 19, -111);
+    ctx.lineTo(24, -59);
+    ctx.lineTo(-24, -59);
     ctx.closePath();
     U.ink(ctx, skin.body, 5, skin.outline);
+  }
+
+  function beaverArm(ctx, shoulder, elbow, hand, skin) {
+    limb(ctx, shoulder, hand, elbow, 13, skin);
+    ctx.save();
+    ctx.translate(hand.x, hand.y);
+    U.ellipse(ctx, 0, 0, 10, 11);
+    U.ink(ctx, skin.body, 4, skin.outline);
+    ctx.beginPath();
+    ctx.arc(1, 1, 5, .2, 1.35);
+    ctx.strokeStyle = U.rgba(skin.bodyLo, .7);
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function beaverLeg(ctx, hip, knee, foot, skin) {
+    const pantsSkin = Object.assign({}, skin, { body: skin.shorts, bodyLo: skin.shortsLo });
+    limb(ctx, hip, foot, knee, 17, pantsSkin);
+    ctx.save();
+    ctx.translate(foot.x, foot.y);
+    U.ellipse(ctx, 3, -1, 17, 8);
+    U.ink(ctx, skin.shoe, 4, skin.outline);
+    ctx.restore();
+  }
+
+  function beaverPants(ctx, skin) {
+    ctx.beginPath();
+    ctx.moveTo(-25, -65);
+    ctx.lineTo(25, -65);
+    ctx.lineTo(23, -48);
+    ctx.quadraticCurveTo(12, -45, 2, -49);
+    ctx.lineTo(0, -45);
+    ctx.lineTo(-2, -49);
+    ctx.quadraticCurveTo(-12, -45, -23, -48);
+    ctx.closePath();
+    U.ink(ctx, skin.shorts, 5, skin.outline);
+    ctx.beginPath();
+    ctx.moveTo(0, -62); ctx.lineTo(0, -47);
+    ctx.strokeStyle = U.rgba(skin.shortsLo, .7); ctx.lineWidth = 3; ctx.stroke();
   }
 
   function face(ctx, j, skin, t) {
@@ -710,14 +747,14 @@ const Riggy = (() => {
     const r = j.head.r, turn = j.head.turn;
     const cx = turn * r * .08;
 
-    // Broad, slightly squared beaver head.
+    // Broad, friendly head matching Billy's simple cartoon silhouette.
     ctx.beginPath();
-    ctx.moveTo(-r * .72, -r * .72);
-    ctx.quadraticCurveTo(0, -r * 1.08, r * .72, -r * .72);
-    ctx.quadraticCurveTo(r * 1.03, -r * .3, r * .92, r * .42);
-    ctx.quadraticCurveTo(r * .72, r * .92, 0, r * .98);
-    ctx.quadraticCurveTo(-r * .72, r * .92, -r * .92, r * .42);
-    ctx.quadraticCurveTo(-r * 1.03, -r * .3, -r * .72, -r * .72);
+    ctx.moveTo(-r * .7, -r * .78);
+    ctx.quadraticCurveTo(0, -r * 1.08, r * .7, -r * .78);
+    ctx.quadraticCurveTo(r * 1.02, -r * .42, r * .94, r * .35);
+    ctx.quadraticCurveTo(r * .82, r * .9, 0, r * .98);
+    ctx.quadraticCurveTo(-r * .82, r * .9, -r * .94, r * .35);
+    ctx.quadraticCurveTo(-r * 1.02, -r * .42, -r * .7, -r * .78);
     ctx.closePath();
     U.ink(ctx, skin.body, 5.5, skin.outline);
 
@@ -730,10 +767,10 @@ const Riggy = (() => {
     ctx.restore();
 
     if (turn < -0.2) return;
-    const eyeY = -r * .25;
+    const eyeY = -r * .27;
     [-1, 1].forEach(s => {
-      const ex = cx + s * r * .25;
-      U.ellipse(ctx, ex, eyeY, r * .13, r * .28);
+      const ex = cx + s * r * .22;
+      U.ellipse(ctx, ex, eyeY, r * .12, r * .24);
       U.ink(ctx, skin.eye, 3.2, skin.outline);
       U.ellipse(ctx, ex + s * r * .015, eyeY + r * .04, r * .055, r * .14);
       ctx.fillStyle = skin.pupil; ctx.fill();
@@ -741,17 +778,18 @@ const Riggy = (() => {
       ctx.fillStyle = '#fff'; ctx.fill();
     });
 
-    // One joined tan muzzle with a large black beaver nose.
-    U.ellipse(ctx, cx, r * .29, r * .51, r * .35);
-    U.ink(ctx, '#d79558', 4, skin.outline);
-    U.ellipse(ctx, cx, r * .08, r * .22, r * .15);
+    // Two cheek pads, the black nose, and Billy's square front teeth.
+    U.ellipse(ctx, cx - r * .22, r * .25, r * .32, r * .3);
+    U.ink(ctx, '#d79558', 3.5, skin.outline);
+    U.ellipse(ctx, cx + r * .22, r * .25, r * .32, r * .3);
+    U.ink(ctx, '#d79558', 3.5, skin.outline);
+    U.ellipse(ctx, cx, r * .04, r * .22, r * .15);
     U.ink(ctx, '#17110d', 3.5, skin.outline);
     U.ellipse(ctx, cx - r * .07, r * .035, r * .06, r * .035);
     ctx.fillStyle = 'rgba(255,255,255,.55)'; ctx.fill();
-    ctx.beginPath(); ctx.moveTo(cx, r * .22); ctx.lineTo(cx, r * .43);
+    ctx.beginPath(); ctx.moveTo(cx, r * .18); ctx.lineTo(cx, r * .43);
     ctx.strokeStyle = skin.outline; ctx.lineWidth = 3.5; ctx.stroke();
-    ctx.beginPath(); ctx.arc(cx, r * .31, r * .2, .12 * Math.PI, .88 * Math.PI);
-    ctx.stroke();
+    ctx.beginPath(); ctx.arc(cx, r * .31, r * .2, .12 * Math.PI, .88 * Math.PI); ctx.stroke();
   }
 
   /* ---------------- accessories ---------------- */
@@ -898,14 +936,14 @@ const Riggy = (() => {
     tee(ctx, j, skin) {
       ctx.save();
       ctx.lineJoin = 'round';
-      const top = -112, bot = -60;
-      const halfTop = 25, halfBot = 24;
+      const top = -110, bot = -63;
+      const halfTop = 25, halfBot = 25;
       // Sleeves join directly to the shoulders and stop above the elbows.
       ctx.beginPath();
-      ctx.moveTo(-21, top + 4); ctx.lineTo(-34, top + 13);
-      ctx.lineTo(-29, top + 27); ctx.lineTo(-23, top + 23);
-      ctx.moveTo(21, top + 4); ctx.lineTo(34, top + 13);
-      ctx.lineTo(29, top + 27); ctx.lineTo(23, top + 23);
+      ctx.moveTo(-21, top + 5); ctx.lineTo(-34, top + 14);
+      ctx.lineTo(-30, top + 29); ctx.lineTo(-23, top + 24);
+      ctx.moveTo(21, top + 5); ctx.lineTo(34, top + 14);
+      ctx.lineTo(30, top + 29); ctx.lineTo(23, top + 24);
       ctx.strokeStyle = skin.outline; ctx.lineWidth = 15; ctx.lineCap = 'round'; ctx.stroke();
       ctx.strokeStyle = '#2fa84f'; ctx.lineWidth = 9; ctx.stroke();
       ctx.beginPath();
@@ -932,8 +970,8 @@ const Riggy = (() => {
       const r = j.head.r, turn = j.head.turn;
       if (turn < -0.2 || j.mouth === 'x') return;
       ctx.save();
-      ctx.translate(turn * r * .08, r * .46);
-      U.roundRect(ctx, -r * .15, 0, r * .30, r * .27, 3);
+      ctx.translate(turn * r * .08, r * .42);
+      U.roundRect(ctx, -r * .15, 0, r * .30, r * .26, 2);
       U.ink(ctx, '#fffaf0', 3.2, skin.outline);
       ctx.strokeStyle = U.rgba(skin.outline, .7); ctx.lineWidth = 2;
       ctx.beginPath(); ctx.moveTo(0, r * .02); ctx.lineTo(0, r * .24); ctx.stroke();
@@ -994,24 +1032,36 @@ const Riggy = (() => {
     skin.accessories.filter(a => BACK_ACC.has(a)).forEach(a => ACC[a] && ACC[a](ctx, j, skin, t));
 
     // far limbs (right side reads as "far" from our 3/4 view)
-    limb(ctx, j.hipR, j.footR, j.kneeR, 15, skin);
-    shoe(ctx, j.footR, skin, 1, (j.footR.y < -12 ? -.35 : 0));
-    limb(ctx, j.shR, j.handR, j.elbR, 11, skin);
-    glove(ctx, j.handR, 11, skin);
+    if (skin.beaver) {
+      beaverLeg(ctx, j.hipR, j.kneeR, j.footR, skin);
+      beaverArm(ctx, j.shR, j.elbR, j.handR, skin);
+    } else {
+      limb(ctx, j.hipR, j.footR, j.kneeR, 15, skin);
+      shoe(ctx, j.footR, skin, 1, (j.footR.y < -12 ? -.35 : 0));
+      limb(ctx, j.shR, j.handR, j.elbR, 11, skin);
+      glove(ctx, j.handR, 11, skin);
+    }
 
     // near leg — drawn before shorts so the shorts cover the upper thigh
-    limb(ctx, j.hipL, j.footL, j.kneeL, 16, skin);
-    shoe(ctx, j.footL, skin, 1, (j.footL.y < -12 ? -.35 : 0));
+    if (skin.beaver) beaverLeg(ctx, j.hipL, j.kneeL, j.footL, skin);
+    else {
+      limb(ctx, j.hipL, j.footL, j.kneeL, 16, skin);
+      shoe(ctx, j.footL, skin, 1, (j.footL.y < -12 ? -.35 : 0));
+    }
 
     // body
     if (skin.beaver) beaverTorso(ctx, skin);
     else torso(ctx, j, skin);
     skin.accessories.filter(a => TORSO_ACC.has(a)).forEach(a => ACC[a] && ACC[a](ctx, j, skin, t));
-    shorts(ctx, skin, j);
+    if (skin.beaver) beaverPants(ctx, skin);
+    else shorts(ctx, skin, j);
 
     // near arm — in front of the torso
-    limb(ctx, j.shL, j.handL, j.elbL, 12, skin);
-    glove(ctx, j.handL, 11.5, skin);
+    if (skin.beaver) beaverArm(ctx, j.shL, j.elbL, j.handL, skin);
+    else {
+      limb(ctx, j.shL, j.handL, j.elbL, 12, skin);
+      glove(ctx, j.handL, 11.5, skin);
+    }
 
     // head group
     ctx.save();
