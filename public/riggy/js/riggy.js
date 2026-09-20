@@ -1032,24 +1032,36 @@ const Riggy = (() => {
     skin.accessories.filter(a => BACK_ACC.has(a)).forEach(a => ACC[a] && ACC[a](ctx, j, skin, t));
 
     // far limbs (right side reads as "far" from our 3/4 view)
-    limb(ctx, j.hipR, j.footR, j.kneeR, 15, skin);
-    shoe(ctx, j.footR, skin, 1, (j.footR.y < -12 ? -.35 : 0));
-    limb(ctx, j.shR, j.handR, j.elbR, 11, skin);
-    glove(ctx, j.handR, 11, skin);
+    if (skin.beaver) {
+      beaverLeg(ctx, j.hipR, j.kneeR, j.footR, skin);
+      beaverArm(ctx, j.shR, j.elbR, j.handR, skin);
+    } else {
+      limb(ctx, j.hipR, j.footR, j.kneeR, 15, skin);
+      shoe(ctx, j.footR, skin, 1, (j.footR.y < -12 ? -.35 : 0));
+      limb(ctx, j.shR, j.handR, j.elbR, 11, skin);
+      glove(ctx, j.handR, 11, skin);
+    }
 
     // near leg — drawn before shorts so the shorts cover the upper thigh
-    limb(ctx, j.hipL, j.footL, j.kneeL, 16, skin);
-    shoe(ctx, j.footL, skin, 1, (j.footL.y < -12 ? -.35 : 0));
+    if (skin.beaver) beaverLeg(ctx, j.hipL, j.kneeL, j.footL, skin);
+    else {
+      limb(ctx, j.hipL, j.footL, j.kneeL, 16, skin);
+      shoe(ctx, j.footL, skin, 1, (j.footL.y < -12 ? -.35 : 0));
+    }
 
     // body
     if (skin.beaver) beaverTorso(ctx, skin);
     else torso(ctx, j, skin);
     skin.accessories.filter(a => TORSO_ACC.has(a)).forEach(a => ACC[a] && ACC[a](ctx, j, skin, t));
-    shorts(ctx, skin, j);
+    if (skin.beaver) beaverPants(ctx, skin);
+    else shorts(ctx, skin, j);
 
     // near arm — in front of the torso
-    limb(ctx, j.shL, j.handL, j.elbL, 12, skin);
-    glove(ctx, j.handL, 11.5, skin);
+    if (skin.beaver) beaverArm(ctx, j.shL, j.elbL, j.handL, skin);
+    else {
+      limb(ctx, j.shL, j.handL, j.elbL, 12, skin);
+      glove(ctx, j.handL, 11.5, skin);
+    }
 
     // head group
     ctx.save();
