@@ -125,10 +125,10 @@ const Riggy = (() => {
     },
     billy: {
       name: 'Billy the Beaver',
-      body: '#8a4f25', bodyLo: '#543016', bodyHi: '#bd7540',
-      shorts: '#2f6fd0', shortsLo: '#1a4587',
-      glove: '#8a4f25', shoe: '#5c3218', shoeLo: '#351b0c',
-      eye: '#ffffff', pupil: '#1b1006', outline: '#241505',
+      body: '#8b4d20', bodyLo: '#593014', bodyHi: '#b96e35',
+      shorts: '#1769b5', shortsLo: '#0d4077',
+      glove: '#8b4d20', shoe: '#71401f', shoeLo: '#42220f',
+      eye: '#ffffff', pupil: '#17100b', outline: '#21150d',
       flatTail: true, roundEars: true, beaver: true,
       accessories: ['beaver-tail', 'tee', 'buck-teeth']
     }
@@ -572,24 +572,25 @@ const Riggy = (() => {
   }
 
   function beaverTorso(ctx, skin) {
-    // Billy's compact body sits completely inside his boxy T-shirt.
+    // A short, sturdy body matching the reference rather than Riggy's narrow frame.
     ctx.beginPath();
-    ctx.moveTo(-19, -111);
-    ctx.quadraticCurveTo(0, -117, 19, -111);
-    ctx.lineTo(24, -59);
-    ctx.lineTo(-24, -59);
+    ctx.moveTo(-21, -108);
+    ctx.quadraticCurveTo(0, -114, 21, -108);
+    ctx.lineTo(26, -58);
+    ctx.lineTo(-26, -58);
     ctx.closePath();
     U.ink(ctx, skin.body, 5, skin.outline);
   }
 
   function beaverArm(ctx, shoulder, elbow, hand, skin) {
-    limb(ctx, shoulder, hand, elbow, 13, skin);
+    // Thick, short arms with blunt paws; no gloves or noodle-like rabbit limbs.
+    limb(ctx, shoulder, hand, elbow, 14, skin, .85);
     ctx.save();
     ctx.translate(hand.x, hand.y);
-    U.ellipse(ctx, 0, 0, 10, 11);
+    U.ellipse(ctx, 0, 0, 10.5, 12);
     U.ink(ctx, skin.body, 4, skin.outline);
     ctx.beginPath();
-    ctx.arc(1, 1, 5, .2, 1.35);
+    ctx.arc(0, 1, 5.5, .15, 1.4);
     ctx.strokeStyle = U.rgba(skin.bodyLo, .7);
     ctx.lineWidth = 2;
     ctx.stroke();
@@ -597,28 +598,32 @@ const Riggy = (() => {
   }
 
   function beaverLeg(ctx, hip, knee, foot, skin) {
+    // Blue trouser legs connect directly to the waist; brown feet sit below them.
     const pantsSkin = Object.assign({}, skin, { body: skin.shorts, bodyLo: skin.shortsLo });
-    limb(ctx, hip, foot, knee, 17, pantsSkin);
+    limb(ctx, hip, foot, knee, 18, pantsSkin);
     ctx.save();
     ctx.translate(foot.x, foot.y);
-    U.ellipse(ctx, 3, -1, 17, 8);
+    U.ellipse(ctx, 3, -1, 16, 8.5);
     U.ink(ctx, skin.shoe, 4, skin.outline);
+    ctx.beginPath(); ctx.moveTo(-3, -5); ctx.lineTo(11, -5);
+    ctx.strokeStyle = U.rgba(skin.bodyHi, .32); ctx.lineWidth = 2.2; ctx.stroke();
     ctx.restore();
   }
 
   function beaverPants(ctx, skin) {
+    // Straight blue pants like the reference, split cleanly into two legs.
     ctx.beginPath();
-    ctx.moveTo(-25, -65);
-    ctx.lineTo(25, -65);
-    ctx.lineTo(23, -48);
-    ctx.quadraticCurveTo(12, -45, 2, -49);
-    ctx.lineTo(0, -45);
-    ctx.lineTo(-2, -49);
-    ctx.quadraticCurveTo(-12, -45, -23, -48);
+    ctx.moveTo(-26, -66);
+    ctx.lineTo(26, -66);
+    ctx.lineTo(23, -45);
+    ctx.lineTo(4, -45);
+    ctx.lineTo(0, -51);
+    ctx.lineTo(-4, -45);
+    ctx.lineTo(-23, -45);
     ctx.closePath();
     U.ink(ctx, skin.shorts, 5, skin.outline);
     ctx.beginPath();
-    ctx.moveTo(0, -62); ctx.lineTo(0, -47);
+    ctx.moveTo(0, -63); ctx.lineTo(0, -48);
     ctx.strokeStyle = U.rgba(skin.shortsLo, .7); ctx.lineWidth = 3; ctx.stroke();
   }
 
@@ -747,14 +752,15 @@ const Riggy = (() => {
     const r = j.head.r, turn = j.head.turn;
     const cx = turn * r * .08;
 
-    // Broad, friendly head matching Billy's simple cartoon silhouette.
+    // Large circular beaver head with the compact cheeks and muzzle from the reference.
     ctx.beginPath();
-    ctx.moveTo(-r * .7, -r * .78);
-    ctx.quadraticCurveTo(0, -r * 1.08, r * .7, -r * .78);
-    ctx.quadraticCurveTo(r * 1.02, -r * .42, r * .94, r * .35);
-    ctx.quadraticCurveTo(r * .82, r * .9, 0, r * .98);
-    ctx.quadraticCurveTo(-r * .82, r * .9, -r * .94, r * .35);
-    ctx.quadraticCurveTo(-r * 1.02, -r * .42, -r * .7, -r * .78);
+    ctx.moveTo(-r * .64, -r * .82);
+    ctx.quadraticCurveTo(0, -r * 1.08, r * .66, -r * .82);
+    ctx.quadraticCurveTo(r * 1.02, -r * .45, r * .96, r * .28);
+    ctx.quadraticCurveTo(r * .88, r * .86, r * .24, r * .98);
+    ctx.quadraticCurveTo(0, r * 1.04, -r * .24, r * .98);
+    ctx.quadraticCurveTo(-r * .88, r * .86, -r * .96, r * .28);
+    ctx.quadraticCurveTo(-r * 1.02, -r * .45, -r * .64, -r * .82);
     ctx.closePath();
     U.ink(ctx, skin.body, 5.5, skin.outline);
 
@@ -767,10 +773,10 @@ const Riggy = (() => {
     ctx.restore();
 
     if (turn < -0.2) return;
-    const eyeY = -r * .27;
+    const eyeY = -r * .25;
     [-1, 1].forEach(s => {
-      const ex = cx + s * r * .22;
-      U.ellipse(ctx, ex, eyeY, r * .12, r * .24);
+      const ex = cx + s * r * .19;
+      U.ellipse(ctx, ex, eyeY, r * .105, r * .23);
       U.ink(ctx, skin.eye, 3.2, skin.outline);
       U.ellipse(ctx, ex + s * r * .015, eyeY + r * .04, r * .055, r * .14);
       ctx.fillStyle = skin.pupil; ctx.fill();
@@ -778,18 +784,22 @@ const Riggy = (() => {
       ctx.fillStyle = '#fff'; ctx.fill();
     });
 
-    // Two cheek pads, the black nose, and Billy's square front teeth.
-    U.ellipse(ctx, cx - r * .22, r * .25, r * .32, r * .3);
-    U.ink(ctx, '#d79558', 3.5, skin.outline);
-    U.ellipse(ctx, cx + r * .22, r * .25, r * .32, r * .3);
-    U.ink(ctx, '#d79558', 3.5, skin.outline);
-    U.ellipse(ctx, cx, r * .04, r * .22, r * .15);
+    // One joined tan muzzle, black oval nose and two square front teeth.
+    ctx.beginPath();
+    ctx.moveTo(cx, r * .06);
+    ctx.bezierCurveTo(cx - r * .2, -r * .01, cx - r * .43, r * .1, cx - r * .39, r * .32);
+    ctx.bezierCurveTo(cx - r * .35, r * .52, cx - r * .1, r * .5, cx, r * .39);
+    ctx.bezierCurveTo(cx + r * .1, r * .5, cx + r * .35, r * .52, cx + r * .39, r * .32);
+    ctx.bezierCurveTo(cx + r * .43, r * .1, cx + r * .2, -r * .01, cx, r * .06);
+    ctx.closePath();
+    U.ink(ctx, '#d28a4f', 3.5, skin.outline);
+    U.ellipse(ctx, cx, r * .04, r * .21, r * .14);
     U.ink(ctx, '#17110d', 3.5, skin.outline);
     U.ellipse(ctx, cx - r * .07, r * .035, r * .06, r * .035);
     ctx.fillStyle = 'rgba(255,255,255,.55)'; ctx.fill();
-    ctx.beginPath(); ctx.moveTo(cx, r * .18); ctx.lineTo(cx, r * .43);
+    ctx.beginPath(); ctx.moveTo(cx, r * .17); ctx.lineTo(cx, r * .43);
     ctx.strokeStyle = skin.outline; ctx.lineWidth = 3.5; ctx.stroke();
-    ctx.beginPath(); ctx.arc(cx, r * .31, r * .2, .12 * Math.PI, .88 * Math.PI); ctx.stroke();
+    ctx.beginPath(); ctx.arc(cx, r * .3, r * .19, .12 * Math.PI, .88 * Math.PI); ctx.stroke();
   }
 
   /* ---------------- accessories ---------------- */
@@ -917,16 +927,16 @@ const Riggy = (() => {
       ctx.save();
       const hipX = (j.hipL.x + j.hipR.x) * .5;
       const hipY = (j.hipL.y + j.hipR.y) * .5;
-      ctx.translate(hipX - 3, hipY + 2);
-      ctx.rotate(-0.42 + j.tail * .12 + j.tailWag * .08);
+      ctx.translate(hipX - 4, hipY + 1);
+      ctx.rotate(-0.48 + j.tail * .1 + j.tailWag * .06);
       ctx.beginPath();
-      ctx.moveTo(-2, -8);
-      ctx.quadraticCurveTo(-24, -20, -47, -14);
-      ctx.quadraticCurveTo(-59, -2, -49, 15);
-      ctx.quadraticCurveTo(-27, 22, -2, 9);
+      ctx.moveTo(-2, -9);
+      ctx.quadraticCurveTo(-28, -25, -53, -15);
+      ctx.quadraticCurveTo(-66, -2, -54, 19);
+      ctx.quadraticCurveTo(-29, 27, -2, 10);
       ctx.closePath();
-      U.ink(ctx, '#6b4423', 4.5, skin.outline);
-      ctx.strokeStyle = U.rgba('#3d2410', .55); ctx.lineWidth = 2.2;
+      U.ink(ctx, '#70401f', 4.5, skin.outline);
+      ctx.strokeStyle = U.rgba('#3d2410', .62); ctx.lineWidth = 2.2;
       ctx.beginPath(); ctx.moveTo(-45, -10); ctx.lineTo(-8, 9); ctx.stroke();
       ctx.beginPath(); ctx.moveTo(-51, 1); ctx.lineTo(-15, 16); ctx.stroke();
       ctx.beginPath(); ctx.moveTo(-32, -15); ctx.lineTo(-44, 14); ctx.stroke();
@@ -936,33 +946,25 @@ const Riggy = (() => {
     tee(ctx, j, skin) {
       ctx.save();
       ctx.lineJoin = 'round';
-      const top = -110, bot = -63;
-      const halfTop = 25, halfBot = 25;
-      // Sleeves join directly to the shoulders and stop above the elbows.
+      const top = -111, bot = -64;
+      const halfTop = 23, halfBot = 26;
+      // Short triangular sleeves and a straight boxy shirt, as in the reference.
       ctx.beginPath();
-      ctx.moveTo(-21, top + 5); ctx.lineTo(-34, top + 14);
-      ctx.lineTo(-30, top + 29); ctx.lineTo(-23, top + 24);
-      ctx.moveTo(21, top + 5); ctx.lineTo(34, top + 14);
-      ctx.lineTo(30, top + 29); ctx.lineTo(23, top + 24);
-      ctx.strokeStyle = skin.outline; ctx.lineWidth = 15; ctx.lineCap = 'round'; ctx.stroke();
-      ctx.strokeStyle = '#2fa84f'; ctx.lineWidth = 9; ctx.stroke();
-      ctx.beginPath();
-      ctx.moveTo(-halfTop, top);
-      ctx.lineTo(-halfBot, bot);
-      ctx.lineTo(halfBot, bot);
-      ctx.lineTo(halfTop, top);
-      ctx.quadraticCurveTo(0, top - 6, -halfTop, top);
+      ctx.moveTo(-19, top + 3); ctx.lineTo(-36, top + 18); ctx.lineTo(-27, top + 29); ctx.lineTo(-21, top + 23);
+      ctx.lineTo(-halfBot, bot); ctx.lineTo(halfBot, bot); ctx.lineTo(21, top + 23);
+      ctx.lineTo(27, top + 29); ctx.lineTo(36, top + 18); ctx.lineTo(19, top + 3);
+      ctx.quadraticCurveTo(0, top - 5, -19, top + 3);
       ctx.closePath();
-      U.ink(ctx, '#2fa84f', 5, skin.outline);
-      ctx.save(); ctx.clip();
-      ctx.fillStyle = 'rgba(255,255,255,.16)';
-      ctx.fillRect(-halfTop, top, 11, bot - top);
-      ctx.fillStyle = U.rgba('#1c6f34', .5);
-      ctx.fillRect(halfTop - 12, top, 14, bot - top);
-      ctx.restore();
+      U.ink(ctx, '#169a46', 5, skin.outline);
+      ctx.beginPath();
+      ctx.moveTo(-halfTop, top + 2); ctx.lineTo(-halfBot, bot);
+      ctx.lineTo(halfBot, bot); ctx.lineTo(halfTop, top + 2);
+      ctx.quadraticCurveTo(0, top - 5, -halfTop, top + 2);
+      ctx.closePath();
+      ctx.strokeStyle = U.rgba('#08752e', .55); ctx.lineWidth = 2; ctx.stroke();
       // collar
       ctx.beginPath();
-      ctx.moveTo(-11, top + 1); ctx.quadraticCurveTo(0, top + 9, 11, top + 1);
+      ctx.moveTo(-10, top + 1); ctx.quadraticCurveTo(0, top + 8, 10, top + 1);
       ctx.strokeStyle = U.rgba(skin.outline, .7); ctx.lineWidth = 4; ctx.stroke();
       ctx.restore();
     },
@@ -970,8 +972,8 @@ const Riggy = (() => {
       const r = j.head.r, turn = j.head.turn;
       if (turn < -0.2 || j.mouth === 'x') return;
       ctx.save();
-      ctx.translate(turn * r * .08, r * .42);
-      U.roundRect(ctx, -r * .15, 0, r * .30, r * .26, 2);
+      ctx.translate(turn * r * .08, r * .39);
+      U.roundRect(ctx, -r * .16, 0, r * .32, r * .28, 2);
       U.ink(ctx, '#fffaf0', 3.2, skin.outline);
       ctx.strokeStyle = U.rgba(skin.outline, .7); ctx.lineWidth = 2;
       ctx.beginPath(); ctx.moveTo(0, r * .02); ctx.lineTo(0, r * .24); ctx.stroke();
