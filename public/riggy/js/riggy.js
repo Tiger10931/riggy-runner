@@ -125,10 +125,10 @@ const Riggy = (() => {
     },
     billy: {
       name: 'Billy the Beaver',
-      body: '#8b4d20', bodyLo: '#593014', bodyHi: '#b96e35',
-      shorts: '#1769b5', shortsLo: '#0d4077',
-      glove: '#8b4d20', shoe: '#71401f', shoeLo: '#42220f',
-      eye: '#ffffff', pupil: '#17100b', outline: '#21150d',
+      body: '#7b4c28', bodyLo: '#593014', bodyHi: '#a06b3a',
+      shorts: '#0072bc', shortsLo: '#004a7c',
+      glove: '#7b4c28', shoe: '#5a3818', shoeLo: '#3a2410',
+      eye: '#ffffff', pupil: '#17100b', outline: '#1a1208',
       flatTail: true, roundEars: true, beaver: true,
       accessories: ['beaver-tail', 'tee', 'buck-teeth']
     }
@@ -770,6 +770,21 @@ const Riggy = (() => {
     shade.addColorStop(.52, U.rgba(skin.body, 0));
     shade.addColorStop(1, U.rgba(skin.bodyLo, .5));
     ctx.fillStyle = shade; ctx.fillRect(-r, -r, r * 2, r * 2);
+    // Cream-coloured cap covering the crown of the head
+    ctx.fillStyle = '#fdf5e6';
+    ctx.beginPath();
+    ctx.moveTo(-r * 1.1, -r * .18);
+    ctx.quadraticCurveTo(0, -r * .28, r * 1.1, -r * .18);
+    ctx.lineTo(r * 1.1, -r * 1.3);
+    ctx.lineTo(-r * 1.1, -r * 1.3);
+    ctx.closePath();
+    ctx.fill();
+    // Cap brim shadow line
+    ctx.beginPath();
+    ctx.moveTo(-r * .96, -r * .18);
+    ctx.quadraticCurveTo(0, -r * .28, r * .96, -r * .18);
+    ctx.strokeStyle = U.rgba(skin.outline, .35);
+    ctx.lineWidth = 3; ctx.stroke();
     ctx.restore();
 
     if (turn < -0.2) return;
@@ -792,7 +807,7 @@ const Riggy = (() => {
     ctx.bezierCurveTo(cx + r * .1, r * .5, cx + r * .35, r * .52, cx + r * .39, r * .32);
     ctx.bezierCurveTo(cx + r * .43, r * .1, cx + r * .2, -r * .01, cx, r * .06);
     ctx.closePath();
-    U.ink(ctx, '#d28a4f', 3.5, skin.outline);
+    U.ink(ctx, '#e8ac86', 3.5, skin.outline);
     U.ellipse(ctx, cx, r * .04, r * .21, r * .14);
     U.ink(ctx, '#17110d', 3.5, skin.outline);
     U.ellipse(ctx, cx - r * .07, r * .035, r * .06, r * .035);
@@ -800,6 +815,25 @@ const Riggy = (() => {
     ctx.beginPath(); ctx.moveTo(cx, r * .17); ctx.lineTo(cx, r * .43);
     ctx.strokeStyle = skin.outline; ctx.lineWidth = 3.5; ctx.stroke();
     ctx.beginPath(); ctx.arc(cx, r * .3, r * .19, .12 * Math.PI, .88 * Math.PI); ctx.stroke();
+
+    // Cross-hatch marks on the left cheek (three vertical × two horizontal)
+    ctx.save();
+    ctx.strokeStyle = U.rgba(skin.outline, .38);
+    ctx.lineWidth = 2; ctx.lineCap = 'round';
+    const hx = -r * .58, hy = eyeY + r * .22;
+    for (let i = 0; i < 3; i++) {
+      ctx.beginPath();
+      ctx.moveTo(hx + i * 4.5 - 4.5, hy - 7);
+      ctx.lineTo(hx + i * 4.5 - 4.5, hy + 7);
+      ctx.stroke();
+    }
+    for (let i = 0; i < 2; i++) {
+      ctx.beginPath();
+      ctx.moveTo(hx - 7, hy - 4 + i * 8);
+      ctx.lineTo(hx + 7, hy - 4 + i * 8);
+      ctx.stroke();
+    }
+    ctx.restore();
   }
 
   /* ---------------- accessories ---------------- */
@@ -935,37 +969,59 @@ const Riggy = (() => {
       ctx.quadraticCurveTo(-66, -2, -54, 19);
       ctx.quadraticCurveTo(-29, 27, -2, 10);
       ctx.closePath();
-      U.ink(ctx, '#70401f', 4.5, skin.outline);
-      ctx.strokeStyle = U.rgba('#3d2410', .62); ctx.lineWidth = 2.2;
-      ctx.beginPath(); ctx.moveTo(-45, -10); ctx.lineTo(-8, 9); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(-51, 1); ctx.lineTo(-15, 16); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(-32, -15); ctx.lineTo(-44, 14); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(-18, -12); ctx.lineTo(-29, 18); ctx.stroke();
+      U.ink(ctx, '#5a3818', 4.5, skin.outline);
+      // Cross-hatch grid pattern clipped to the tail shape
+      ctx.save(); ctx.clip();
+      ctx.strokeStyle = U.rgba('#3a2410', .55); ctx.lineWidth = 2;
+      for (let x = -60; x <= -2; x += 8) {
+        ctx.beginPath(); ctx.moveTo(x, -28); ctx.lineTo(x, 28); ctx.stroke();
+      }
+      for (let y = -24; y <= 24; y += 8) {
+        ctx.beginPath(); ctx.moveTo(-68, y); ctx.lineTo(0, y); ctx.stroke();
+      }
+      ctx.restore();
       ctx.restore();
     },
     tee(ctx, j, skin) {
       ctx.save();
       ctx.lineJoin = 'round';
-      const top = -111, bot = -64;
-      const halfTop = 23, halfBot = 26;
-      // Short triangular sleeves and a straight boxy shirt, as in the reference.
+      const top = -112, bot = -62;
+      const halfTop = 24, halfBot = 28;
+      const green = '#00a651', greenLo = '#007a3c';
+      // Short sleeves angled outward + boxy shirt body that fully covers the torso.
       ctx.beginPath();
-      ctx.moveTo(-19, top + 3); ctx.lineTo(-36, top + 18); ctx.lineTo(-27, top + 29); ctx.lineTo(-21, top + 23);
-      ctx.lineTo(-halfBot, bot); ctx.lineTo(halfBot, bot); ctx.lineTo(21, top + 23);
-      ctx.lineTo(27, top + 29); ctx.lineTo(36, top + 18); ctx.lineTo(19, top + 3);
-      ctx.quadraticCurveTo(0, top - 5, -19, top + 3);
+      ctx.moveTo(-halfTop, top + 4);
+      ctx.lineTo(-halfTop - 14, top + 18);
+      ctx.quadraticCurveTo(-halfTop - 18, top + 24, -halfTop - 10, top + 30);
+      ctx.lineTo(-halfTop + 2, top + 24);
+      ctx.lineTo(-halfBot, bot);
+      ctx.lineTo(halfBot, bot);
+      ctx.lineTo(halfTop - 2, top + 24);
+      ctx.lineTo(halfTop + 10, top + 30);
+      ctx.quadraticCurveTo(halfTop + 18, top + 24, halfTop + 14, top + 18);
+      ctx.lineTo(halfTop, top + 4);
+      ctx.quadraticCurveTo(0, top - 4, -halfTop, top + 4);
       ctx.closePath();
-      U.ink(ctx, '#169a46', 5, skin.outline);
-      ctx.beginPath();
-      ctx.moveTo(-halfTop, top + 2); ctx.lineTo(-halfBot, bot);
-      ctx.lineTo(halfBot, bot); ctx.lineTo(halfTop, top + 2);
-      ctx.quadraticCurveTo(0, top - 5, -halfTop, top + 2);
-      ctx.closePath();
-      ctx.strokeStyle = U.rgba('#08752e', .55); ctx.lineWidth = 2; ctx.stroke();
+      U.ink(ctx, green, 5, skin.outline);
+      // shading
+      ctx.save(); ctx.clip();
+      ctx.fillStyle = U.rgba(greenLo, .4);
+      ctx.fillRect(halfBot - 10, top, 14, bot - top + 10);
+      ctx.fillRect(-halfBot, top, 8, bot - top + 10);
+      ctx.fillStyle = U.rgba('#ffffff', .14);
+      ctx.fillRect(-8, top, 16, bot - top);
+      ctx.restore();
       // collar
       ctx.beginPath();
-      ctx.moveTo(-10, top + 1); ctx.quadraticCurveTo(0, top + 8, 10, top + 1);
-      ctx.strokeStyle = U.rgba(skin.outline, .7); ctx.lineWidth = 4; ctx.stroke();
+      ctx.moveTo(-11, top + 2); ctx.quadraticCurveTo(0, top + 9, 11, top + 2);
+      ctx.strokeStyle = U.rgba(skin.outline, .65); ctx.lineWidth = 4; ctx.stroke();
+      // sleeve hem lines
+      [-1, 1].forEach(s => {
+        ctx.beginPath();
+        ctx.moveTo(s * (halfTop + 10), top + 30);
+        ctx.quadraticCurveTo(s * (halfTop + 14), top + 25, s * (halfTop - 2), top + 24);
+        ctx.strokeStyle = U.rgba(skin.outline, .35); ctx.lineWidth = 3; ctx.stroke();
+      });
       ctx.restore();
     },
     'buck-teeth'(ctx, j, skin) {
@@ -1070,12 +1126,7 @@ const Riggy = (() => {
     ctx.translate(j.head.x, j.head.y);
     ctx.rotate(j.head.tilt);
     if (skin.roundEars) {
-      [-1, 1].forEach(s => {
-        U.ellipse(ctx, s * j.head.r * .82, -j.head.r * .5, 13, 14);
-        U.ink(ctx, skin.body, 5, skin.outline);
-        U.ellipse(ctx, s * j.head.r * .82, -j.head.r * .5, 6, 7);
-        ctx.fillStyle = U.rgba(skin.bodyLo, .7); ctx.fill();
-      });
+      // Beaver cap is drawn as part of beaverFace; no side ears.
     } else {
       ear(ctx, -14, -j.head.r * .78, 62, 15, j.ear.l, j.ear.flop, skin);
       ear(ctx, 15, -j.head.r * .78, 66, 15, j.ear.r, j.ear.flop * .86, skin);
@@ -1135,16 +1186,18 @@ const Riggy = (() => {
     ctx.save(); ctx.translate(cx, cy); ctx.scale(r / 42, r / 42);
     if (skin.flatTail) {
       ctx.save(); ctx.translate(-30, 26); ctx.rotate(-.5);
-      U.roundRect(ctx, -34, -13, 40, 28, 12); U.ink(ctx, '#6b4423', 4.5, skin.outline);
+      U.roundRect(ctx, -34, -13, 40, 28, 12); U.ink(ctx, '#5a3818', 4.5, skin.outline);
+      ctx.save(); ctx.clip();
+      ctx.strokeStyle = U.rgba('#3a2410', .5); ctx.lineWidth = 2;
+      for (let x = -30; x <= 2; x += 7) { ctx.beginPath(); ctx.moveTo(x, -13); ctx.lineTo(x, 15); ctx.stroke(); }
+      for (let y = -10; y <= 12; y += 7) { ctx.beginPath(); ctx.moveTo(-34, y); ctx.lineTo(6, y); ctx.stroke(); }
+      ctx.restore();
       ctx.restore();
     } else {
       tail(ctx, -0.6, Math.sin(t) * .3, skin, 1);
     }
     if (skin.roundEars) {
-      [-1, 1].forEach(s => {
-        U.ellipse(ctx, s * j.head.r * .82, -j.head.r * .5, 13, 14);
-        U.ink(ctx, skin.body, 5, skin.outline);
-      });
+      // Beaver cap is drawn as part of beaverFace; no side ears.
     } else {
       ear(ctx, -14, -j.head.r * .78, 62, 15, -.18 + Math.sin(t) * .05, 0, skin);
       ear(ctx, 15, -j.head.r * .78, 66, 15, .18 + Math.sin(t) * .05, 0, skin);
