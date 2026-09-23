@@ -130,7 +130,7 @@ const Riggy = (() => {
       glove: '#7b4c28', shoe: '#5a3818', shoeLo: '#3a2410',
       eye: '#ffffff', pupil: '#17100b', outline: '#1a1208',
       flatTail: true, roundEars: true, beaver: true,
-      accessories: ['beaver-tail', 'tee', 'buck-teeth']
+      accessories: ['beaver-tail', 'tee', 'buck-teeth', 'beaver-hat']
     }
   };
 
@@ -770,21 +770,6 @@ const Riggy = (() => {
     shade.addColorStop(.52, U.rgba(skin.body, 0));
     shade.addColorStop(1, U.rgba(skin.bodyLo, .5));
     ctx.fillStyle = shade; ctx.fillRect(-r, -r, r * 2, r * 2);
-    // Cream-coloured cap covering the crown of the head
-    ctx.fillStyle = '#fdf5e6';
-    ctx.beginPath();
-    ctx.moveTo(-r * 1.1, -r * .18);
-    ctx.quadraticCurveTo(0, -r * .28, r * 1.1, -r * .18);
-    ctx.lineTo(r * 1.1, -r * 1.3);
-    ctx.lineTo(-r * 1.1, -r * 1.3);
-    ctx.closePath();
-    ctx.fill();
-    // Cap brim shadow line
-    ctx.beginPath();
-    ctx.moveTo(-r * .96, -r * .18);
-    ctx.quadraticCurveTo(0, -r * .28, r * .96, -r * .18);
-    ctx.strokeStyle = U.rgba(skin.outline, .35);
-    ctx.lineWidth = 3; ctx.stroke();
     ctx.restore();
 
     if (turn < -0.2) return;
@@ -1034,6 +1019,29 @@ const Riggy = (() => {
       ctx.strokeStyle = U.rgba(skin.outline, .7); ctx.lineWidth = 2;
       ctx.beginPath(); ctx.moveTo(0, r * .02); ctx.lineTo(0, r * .24); ctx.stroke();
       ctx.restore();
+    },
+    'beaver-hat'(ctx, j, skin) {
+      const r = j.head.r;
+      ctx.save();
+      // Beanie cap sitting on the crown, ears poke out on the sides
+      ctx.beginPath();
+      ctx.moveTo(-r * .78, -r * .42);
+      ctx.quadraticCurveTo(-r * .88, -r * .82, 0, -r * .94);
+      ctx.quadraticCurveTo(r * .88, -r * .82, r * .78, -r * .42);
+      ctx.quadraticCurveTo(r * .65, -r * .36, 0, -r * .32);
+      ctx.quadraticCurveTo(-r * .65, -r * .36, -r * .78, -r * .42);
+      ctx.closePath();
+      U.ink(ctx, '#f5f5dc', 5, skin.outline);
+      // Hat band line
+      ctx.beginPath();
+      ctx.moveTo(-r * .78, -r * .42);
+      ctx.quadraticCurveTo(0, -r * .3, r * .78, -r * .42);
+      ctx.strokeStyle = U.rgba(skin.outline, .35);
+      ctx.lineWidth = 3.5; ctx.stroke();
+      // Top pom-pom
+      U.ellipse(ctx, 0, -r * .98, r * .13, r * .11);
+      U.ink(ctx, '#ede4c8', 4, skin.outline);
+      ctx.restore();
     }
   };
   // accessories drawn *behind* the body
@@ -1126,7 +1134,12 @@ const Riggy = (() => {
     ctx.translate(j.head.x, j.head.y);
     ctx.rotate(j.head.tilt);
     if (skin.roundEars) {
-      // Beaver cap is drawn as part of beaverFace; no side ears.
+      [-1, 1].forEach(s => {
+        U.ellipse(ctx, s * j.head.r * .85, -j.head.r * .38, 13, 15);
+        U.ink(ctx, skin.body, 5, skin.outline);
+        U.ellipse(ctx, s * j.head.r * .85, -j.head.r * .38, 6, 8);
+        ctx.fillStyle = U.rgba(skin.bodyLo, .7); ctx.fill();
+      });
     } else {
       ear(ctx, -14, -j.head.r * .78, 62, 15, j.ear.l, j.ear.flop, skin);
       ear(ctx, 15, -j.head.r * .78, 66, 15, j.ear.r, j.ear.flop * .86, skin);
@@ -1197,7 +1210,12 @@ const Riggy = (() => {
       tail(ctx, -0.6, Math.sin(t) * .3, skin, 1);
     }
     if (skin.roundEars) {
-      // Beaver cap is drawn as part of beaverFace; no side ears.
+      [-1, 1].forEach(s => {
+        U.ellipse(ctx, s * j.head.r * .85, -j.head.r * .38, 13, 15);
+        U.ink(ctx, skin.body, 5, skin.outline);
+        U.ellipse(ctx, s * j.head.r * .85, -j.head.r * .38, 6, 8);
+        ctx.fillStyle = U.rgba(skin.bodyLo, .7); ctx.fill();
+      });
     } else {
       ear(ctx, -14, -j.head.r * .78, 62, 15, -.18 + Math.sin(t) * .05, 0, skin);
       ear(ctx, 15, -j.head.r * .78, 66, 15, .18 + Math.sin(t) * .05, 0, skin);
