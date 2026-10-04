@@ -10,7 +10,9 @@
 const Game = (() => {
 
   /* ---------------- constants ---------------- */
-  const FOCAL = 640;
+  const FOCAL_BASE = 640;      // focal length tuned for a ~1280px-wide desktop canvas
+  const REF_W = 1280;          // reference width that FOCAL_BASE/CAM_Y/CAM_BACK were tuned against
+  let FOCAL = FOCAL_BASE;      // recomputed in resize() so mobile keeps the same field of view
   const CAM_Y = 178;          // camera height above the rails (higher = see further)
   const CAM_BACK = 380;       // how far behind the runner the camera sits
   const UNITS_PER_M = 40;
@@ -21,9 +23,18 @@ const Game = (() => {
   const ROLL_TIME = 0.52;
   const LANE_SNAP = 0.13;     // seconds to slide between lanes
 
-  const SPEED_START = 880;
-  const SPEED_MAX = 2450;
-  const SPEED_RAMP = 12;      // units/s gained per second
+  const BASE_SPEED_START = 880, BASE_SPEED_MAX = 2450, BASE_SPEED_RAMP = 12;
+  let SPEED_START = BASE_SPEED_START;
+  let SPEED_MAX = BASE_SPEED_MAX;
+  let SPEED_RAMP = BASE_SPEED_RAMP;   // units/s gained per second
+  let MODE = MODES.normal;            // active difficulty — see MODES in data.js
+
+  function applyMode() {
+    MODE = MODES[Save.d.mode] || MODES.normal;
+    SPEED_START = Math.round(BASE_SPEED_START * MODE.speedStart);
+    SPEED_MAX = Math.round(BASE_SPEED_MAX * MODE.speedMax);
+    SPEED_RAMP = BASE_SPEED_RAMP * MODE.ramp;
+  }
   const BIOME_METRES = 620;
 
   const PLAYER = { w: 76, hStand: 132, hRoll: 62, d: 56 };
@@ -43,6 +54,16 @@ const Game = (() => {
     cv.style.height = H + 'px';
     ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
     horizon = Math.round(H * 0.34);
+
+    // A fixed focal length behaves like a fixed pixel zoom: on a phone-width
+    // canvas the same math that looks right at 1280px makes the runner (and
+    // everything else) fill most of the screen, leaving no room to see what's
+    // coming. Scaling FOCAL down with narrower screens keeps the field of
+    // view — and so the runner's on-screen size — roughly consistent between
+    // desktop and mobile. Floored at .5 so very narrow phones still render a
+    // legible character rather than shrinking indefinitely.
+    const fovScale = U.clamp(W / REF_W, 0.5, 1);
+    FOCAL = FOCAL_BASE * fovScale;
   }
   window.addEventListener('resize', resize);
 
@@ -57,7 +78,7 @@ const Game = (() => {
     state: 'run', crashT: 0, stumbleT: 0, invuln: 0,
     score: 0, coins: 0, combo: 0, comboTimer: 0, multiplier: 1,
     powers: { magnet: 0, jetpack: 0, x2: 0, sneakers: 0, shield: 0 },
-    boardT: 0, boards: 0, boardUsed: 0,
+    boardT: 0, boards: 0, boardUsed: 0, extraLife: 0,
     shake: 0, flash: 0, hitFlash: 0,
     biome: 0, biomeBlend: 0,
     runStats: null,
@@ -309,22 +330,22 @@ const Game = (() => {
   function generateAhead() {
     const limit = S.z + 7000;
     while (spawnZ < limit) {
-      const difficulty = U.clamp(S.dist / 2600, 0, 1);
+      const difficulty = U.clamp(MODE.diffBase + S.dist / MODE.rampDist, 0, MODE.diffMax);
       let idx;
-      if (S.dist < 220) idx = U.pick([10, 0, 6]);
+      if (S.dist < MODE.intro) idx = U.pick([10, 0, 6]);
       else if (Math.random() > difficulty * .85) idx = U.pick(EASY);
       else idx = U.randInt(0, PATTERNS.length - 1);
       const consumed = PATTERNS[idx](spawnZ, difficulty);
       patternCount++;
       // powerup drop
-      if (patternCount % 5 === 0 || U.chance(.10)) {
+      if (patternCount % MODE.powerEvery === 0 || U.chance(MODE.powerChance)) {
         const kinds = ['magnet', 'jetpack', 'x2', 'sneakers', 'shield', 'hoverboard'];
         const weights = [26, 14, 22, 16, 12, 10];
         let r = Math.random() * weights.reduce((a, b) => a + b, 0), k = 0;
         while (r > weights[k]) { r -= weights[k]; k++; }
         addPickup(kinds[k], laneX(U.randInt(0, 2)), 60, spawnZ + consumed * .55);
       }
-      const gapScale = U.lerp(1.05, 0.72, difficulty);
+      const gapScale = U.lerp(MODE.gapStart, MODE.gapEnd, U.clamp(difficulty / MODE.diffMax, 0, 1));
       spawnZ += consumed * gapScale + U.rand(240, 90);
     }
 
@@ -399,6 +420,10 @@ const Game = (() => {
     UI.el.hud.classList.remove('hidden');
 
     applyPerks();
+    applyMode();
+    S.coinAcc = 0;
+    const lbl = document.querySelector('.score-label');
+    if (lbl) { lbl.textContent = MODE.id === 'normal' ? 'SCORE' : 'SCORE · ' + MODE.name; lbl.style.color = MODE.id === 'normal' ? '' : MODE.color; }
 
     obstacles = []; coins = []; pickups = []; scenery = []; particles = []; floaters = [];
     const headStart = ((Save.d.upgrades.headstart || 0) * 150 + (S.perk.headstart ? 300 : 0) + (S.perk.hop ? 150 : 0)) * UNITS_PER_M;
@@ -420,6 +445,7 @@ const Game = (() => {
     });
     S.boards = Save.d.hoverboards + (S.perk.board ? 1 : 0);
     if (S.perk.shield) S.powers.shield = puDuration('shield');
+    S.extraLife = S.perk.twohits ? 1 : 0;     // Ferrick: survive one extra lethal hit per run
 
     S.runStats = { runCoins: 0, runDist: 0, jumps: 0, rolls: 0, near: 0, roofTime: 0, magnets: 0, runScore: 0, maxCombo: 1, tricks: 0, boards: 0, biomeIdx: 0 };
 
@@ -432,7 +458,10 @@ const Game = (() => {
     patternCount = 0;
     generateAhead();
 
-    UI.countdown(() => { S.mode = 'play'; });
+    UI.countdown(() => {
+      S.mode = 'play';
+      if (S.perk.twohits) UI.toast('Ferrick can take 2 hits!', 'good');
+    });
   }
 
   function toMenu() {
@@ -470,7 +499,9 @@ const Game = (() => {
 
     const d = Save.d;
     const B = S.banked;
-    const record = S.score > d.best;
+    const mb = d.bestByMode || (d.bestByMode = { easy: 0, normal: 0, hard: 0, insane: 0 });
+    const record = S.score > (mb[MODE.id] || 0);
+    mb[MODE.id] = Math.max(mb[MODE.id] || 0, Math.floor(S.score));
     d.best = Math.max(d.best, Math.floor(S.score));
     d.bestDist = Math.max(d.bestDist, Math.floor(S.dist));
     if (!B.counted) { d.runs++; B.counted = true; }
@@ -497,14 +528,14 @@ const Game = (() => {
     S.runStats.biomeIdx = S.biome;
     const done = Missions.update(S.runStats);
     const setDone = Missions.checkSetComplete();
-    Save.pushRun({ score: Math.floor(S.score), dist: Math.floor(S.dist), coins: S.coins, at: Date.now() });
+    Save.pushRun({ score: Math.floor(S.score), dist: Math.floor(S.dist), coins: S.coins, mode: MODE.id, at: Date.now() });
 
     setTimeout(() => {
       UI.gameOver({
         score: Math.floor(S.score), coins: S.coins, dist: S.dist,
         maxCombo: S.maxCombo, near: S.near, tricks: S.tricks,
-        biome: biome().name, record,
-        reviveCost: reviveCost(), canRevive: Save.d.coins >= reviveCost() && S.reviveCount < 3
+        biome: biome().name, record, mode: MODE.id, best: mb[MODE.id],
+        reviveCost: reviveCost(), canRevive: Save.d.coins >= reviveCost() && S.reviveCount < MODE.maxRevives
       });
       if (record) Sound.sfx.newRecord();
       if (done.length) done.forEach(m => UI.toast('Mission done: ' + m.text, 'good'));
@@ -515,11 +546,12 @@ const Game = (() => {
 
   /* ---- second chance: pay coins to keep the run alive ---- */
   function reviveCost() {
-    return Math.round(250 * Math.pow(2, S.reviveCount || 0) * (S.perk && S.perk.cheaprevive ? .5 : 1));
+    return Math.round(250 * MODE.reviveMul * Math.pow(2, S.reviveCount || 0) * (S.perk && S.perk.cheaprevive ? .5 : 1));
   }
 
   function revive() {
     if (S.mode !== 'dead') return false;
+    if ((S.reviveCount || 0) >= MODE.maxRevives) return false;
     const cost = reviveCost();
     if (!Save.spend(cost)) { Sound.sfx.deny(); UI.toast('Not enough coins', 'bad'); return false; }
     S.reviveCount = (S.reviveCount || 0) + 1;
@@ -651,6 +683,16 @@ const Game = (() => {
       breakCombo();
       return true;
     }
+    if (S.extraLife > 0) {
+      S.extraLife--;
+      S.invuln = 1.4;
+      Sound.sfx.stumble();
+      UI.toast('Ferrick shrugged it off! Second wind used!', 'good');
+      puff(S.laneX, S.y + 60, S.z, 18, 'rgba(255,160,60,.9)', 200);
+      S.shake = .55; S.hitFlash = .5;
+      breakCombo();
+      return true;
+    }
     return false;
   }
 
@@ -694,7 +736,7 @@ const Game = (() => {
           S.runStats.tricks++;
           addCombo(2);
           floatText('RAMP! +150', S.laneX, 150, S.z, '#ffd23f');
-          S.score += 150 * S.multiplier;
+          S.score += 150 * S.multiplier * MODE.score;
           puff(S.laneX, 40, S.z, 12, 'rgba(255,210,60,.9)', 150);
         }
         continue;
@@ -732,7 +774,7 @@ const Game = (() => {
             S.near++;
             S.runStats.near = S.near;
             addCombo(1);
-            S.score += 40 * S.multiplier;
+            S.score += 40 * S.multiplier * MODE.score;
             Sound.sfx.near();
             if (lateral < 90) floatText('NEAR MISS!', S.laneX, 120, S.z + 60, '#8ef7ff');
           }
@@ -746,7 +788,7 @@ const Game = (() => {
       if (support && S.support == null && S.y > 20) {
         // landed on a roof
         S.tricks++; S.runStats.tricks++;
-        S.score += 200 * S.multiplier;
+        S.score += 200 * S.multiplier * MODE.score;
         floatText('ROOFTOP! +200', S.laneX, gy + 130, S.z, '#ffd23f');
         Sound.sfx.trick();
         addCombo(2);
@@ -793,11 +835,12 @@ const Game = (() => {
     S.biomeBlend = U.clamp((frac - .86) / .14, 0, 1);
 
     /* score */
-    S.score += S.speed * dt * .045 * S.multiplier;
-    if (S.support) { S.roofTime += dt; S.score += 60 * dt * S.multiplier; }
+    S.score += S.speed * dt * .045 * S.multiplier * MODE.score;
+    if (S.support) { S.roofTime += dt; S.score += 60 * dt * S.multiplier * MODE.score; }
 
     /* live "new best" callout */
-    if (!S.beatBest && Save.d.best > 0 && S.score > Save.d.best) {
+    const modeBest = (Save.d.bestByMode || {})[MODE.id] || 0;
+    if (!S.beatBest && modeBest > 0 && S.score > modeBest) {
       S.beatBest = true;
       UI.toast('NEW BEST SCORE!', 'gold');
       Sound.sfx.newRecord();
@@ -934,9 +977,11 @@ const Game = (() => {
       if (near) {
         c.got = true;
         const val = Math.round(1 * goldenBoost * (S.powers.x2 > 0 ? 2 : 1));
-        S.coins += val;
+        S.coinAcc = (S.coinAcc || 0) + val * (MODE.coins - 1);
+        const bonusCoins = Math.floor(S.coinAcc); S.coinAcc -= bonusCoins;
+        S.coins += val + bonusCoins;
         S.runStats.runCoins = S.coins;
-        S.score += 12 * S.multiplier;
+        S.score += 12 * S.multiplier * MODE.score;
         sparkle(c.x, c.y, c.z);
         (S.coins % 25 === 0) ? Sound.sfx.bigCoin() : Sound.sfx.coin();
       }
@@ -963,7 +1008,7 @@ const Game = (() => {
     }
     const dur = puDuration(kind);
     S.powers[kind] = Math.max(S.powers[kind], dur);
-    S.score += 100 * S.multiplier;
+    S.score += 100 * S.multiplier * MODE.score;
     switch (kind) {
       case 'magnet': Sound.sfx.magnet(); S.magnets++; S.runStats.magnets = S.magnets; UI.toast('COIN MAGNET!', 'gold'); break;
       case 'jetpack': Sound.sfx.jetpack(); UI.toast('JETPACK!', 'gold'); S.vy = 900; break;
@@ -1250,10 +1295,12 @@ const Game = (() => {
      BOOT
      ============================================================ */
   function boot() {
+    applyMode();
     resize();
     bindInput();
     UI.bindButtons(api);
     UI.refreshStats();
+    UI.buildModes();
     UI.buildCharacters();
     UI.buildShop();
     UI.buildMissions();

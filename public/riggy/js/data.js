@@ -18,6 +18,8 @@ const Save = (() => {
     totalTricks: 0,
     nearMisses: 0,
     character: 'classic',
+    mode: 'normal',
+    bestByMode: { easy: 0, normal: 0, hard: 0, insane: 0 },
     owned: ['classic'],
     secretsFound: [],
     board: 'pinky',
@@ -30,7 +32,13 @@ const Save = (() => {
     runsLog: [],
     revives: 0,
     opts: { music: true, sfx: true, shake: true, blur: true, fps: false, contrast: false },
-    seenTutorial: false
+    seenTutorial: false,
+    rhythmLast: '',
+    rhythmBest: 0,
+    rhythmDiff: 'normal',
+    rhythmScroll: 'up',
+    rhythmStyle: 'arrow',
+    rhythmKeys: [['arrowleft', 'd'], ['arrowdown', 'f'], ['arrowup', 'j'], ['arrowright', 'k']]
   };
 
   let data = load();
@@ -44,6 +52,15 @@ const Save = (() => {
       merged.upgrades = Object.assign(structuredClone(DEFAULT.upgrades), parsed.upgrades || {});
       merged.opts = Object.assign(structuredClone(DEFAULT.opts), parsed.opts || {});
       if (!Array.isArray(merged.runsLog)) merged.runsLog = [];
+      // rhythm key bindings: 4 lanes x 2 slots, each a lowercase key name or ''
+      const rk = parsed.rhythmKeys;
+      merged.rhythmKeys = (Array.isArray(rk) && rk.length === 4 && rk.every(l => Array.isArray(l) && l.length === 2))
+        ? rk.map(l => l.map(k => (typeof k === 'string' ? k : '')))
+        : structuredClone(DEFAULT.rhythmKeys);
+      /* difficulty modes: older saves had one global best — treat it as the Normal best */
+      merged.bestByMode = Object.assign(structuredClone(DEFAULT.bestByMode), parsed.bestByMode || {});
+      if (!parsed.bestByMode) merged.bestByMode.normal = parsed.best || 0;
+      if (!['easy', 'normal', 'hard', 'insane'].includes(merged.mode)) merged.mode = 'normal';
       return merged;
     } catch (e) {
       console.warn('save corrupt, starting fresh', e);
@@ -88,7 +105,7 @@ const CHARACTERS = [
   { id: 'golden', name: 'Golden Riggy', price: 20000, desc: 'The trophy version. Every coin you touch feels personally flattered.', perk: 'Perk: +25% coin value, always.', perkKey: 'coins' },
   { id: 'phantom', name: 'Phantom Riggy', price: 30000, desc: 'Half here, half elsewhere. Death is more of a scheduling conflict than an ending.', perk: 'Perk: second chances cost half as many coins.', perkKey: 'cheaprevive' },
   { id: 'rosy', name: 'Rosy Rabbit', price: 11000, desc: "Riggy's neighbour from two burrows over. Green sundress, fluffy wrist cuff, ears that clear the treeline.", perk: 'Perk: every run starts 150m down the track.', perkKey: 'hop' },
-  { id: 'ferrick', name: 'Ferrick the Fox', price: 9500, desc: "Riggy's hiking buddy. Blue hoodie, packed backpack, green trail pants — always ready for one more lap of the canyon.", perk: 'Perk: none — pure skill.', perkKey: null },
+  { id: 'ferrick', name: 'Ferrick the Fox', price: 9500, desc: "Riggy's hiking buddy. Blue hoodie, packed backpack, green trail pants — always ready for one more lap of the canyon.", perk: 'Perk: can take 2 hits — survives one crash per run.', perkKey: 'twohits' },
   /* SECRET — hidden from the Characters screen until the player types "neegy" (see ui.js) */
   { id: 'neegy', name: 'Neegy', price: 20000, secret: true, desc: 'A solid gold legend of unknown origin. He does not run so much as he is admired while moving.', perk: 'Perk: none — pure drip.', perkKey: null }
 ];
@@ -96,6 +113,34 @@ const CHARACTERS = [
 /* ============================================================
    BOARDS (cosmetic + small handling perks)
    ============================================================ */
+
+/* ============================================================
+   DIFFICULTY MODES
+   speedStart / speedMax / ramp : multipliers on the base run speed
+   rampDist   : metres until obstacle patterns reach full difficulty
+   diffBase   : starting difficulty (0..1), diffMax : cap on it
+   gapStart/gapEnd : spacing between obstacle patterns (smaller = tighter)
+   intro      : metres of gentle starter patterns
+   score / coins : reward multipliers
+   powerEvery / powerChance : how often power-ups spawn
+   reviveMul / maxRevives : second-chance cost and allowance
+   ============================================================ */
+const MODES = {
+  easy:   { id: 'easy',   name: 'EASY',   color: '#46d36b', desc: 'Slower, roomier, forgiving. Good for learning the track.',
+            speedStart: .82, speedMax: .78, ramp: .65, rampDist: 4500, diffBase: 0,  diffMax: .55, gapStart: 1.30, gapEnd: 1.00, intro: 300,
+            score: .8, coins: 1,   powerEvery: 4, powerChance: .14, reviveMul: .5, maxRevives: 3 },
+  normal: { id: 'normal', name: 'NORMAL', color: '#3aa0ff', desc: 'The classic Riggy Runner experience.',
+            speedStart: 1,   speedMax: 1,   ramp: 1,   rampDist: 2600, diffBase: 0,  diffMax: 1,   gapStart: 1.05, gapEnd: .72,  intro: 220,
+            score: 1,  coins: 1,   powerEvery: 5, powerChance: .10, reviveMul: 1,  maxRevives: 3 },
+  hard:   { id: 'hard',   name: 'HARD',   color: '#ff9a1f', desc: 'Faster, tighter patterns, fewer power-ups. +50% coins.',
+            speedStart: 1.12, speedMax: 1.12, ramp: 1.3, rampDist: 1800, diffBase: .2, diffMax: 1,   gapStart: .92,  gapEnd: .62,  intro: 120,
+            score: 1.5, coins: 1.5, powerEvery: 6, powerChance: .08, reviveMul: 1.5, maxRevives: 2 },
+  insane: { id: 'insane', name: 'INSANE', color: '#ff2e4d', desc: 'Blistering speed, brutal patterns, almost no power-ups. 2.5x coins and score.',
+            speedStart: 1.3, speedMax: 1.25, ramp: 1.8, rampDist: 1000, diffBase: .45, diffMax: 1,  gapStart: .78,  gapEnd: .5,   intro: 0,
+            score: 2.5, coins: 2.5, powerEvery: 8, powerChance: .05, reviveMul: 3,  maxRevives: 1 }
+};
+const MODE_ORDER = ['easy', 'normal', 'hard', 'insane'];
+
 const BOARDS = [
   { id: 'pinky', name: 'Pinky', price: 0, col: '#ff2f86', desc: 'Standard issue. Bubblegum pink, surprisingly rigid.', dur: 20, shape: 'deck', trail: 'dust' },
   { id: 'wave', name: 'Wave Rider', price: 1500, col: '#20c5ff', desc: 'Surf-shaped deck. Rides 4 seconds longer.', dur: 24, shape: 'surf', trail: 'foam' },

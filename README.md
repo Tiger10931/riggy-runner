@@ -1,1 +1,3 @@
-RIGGY RUNNER MADE BY @richard2gd8 on yt and discord richard2gd
+RIGGY RUNNER
+BUILT WITH LOVABLE AI
+*yes i know i used ai i just dont know how to code sorry!

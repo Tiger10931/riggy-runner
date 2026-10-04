@@ -81,7 +81,17 @@
     </div>
 
     <div class="menu-buttons">
+      <div class="mode-wrap">
+        <div class="mode-row" id="modeRow">
+          <button class="mode-btn" data-mode="easy">EASY</button>
+          <button class="mode-btn" data-mode="normal">NORMAL</button>
+          <button class="mode-btn" data-mode="hard">HARD</button>
+          <button class="mode-btn" data-mode="insane">INSANE</button>
+        </div>
+        <div class="mode-desc" id="modeDesc"></div>
+      </div>
       <button class="big-btn play" id="playBtn">PLAY</button>
+      <button class="mid-btn daily" id="rhythmBtn">DAILY JAM</button>
       <div class="btn-row">
         <button class="mid-btn" id="charBtn">CHARACTERS</button>
         <button class="mid-btn" id="shopBtn">SHOP</button>
@@ -258,6 +268,19 @@
     </div>
   </div>
 
+  <!-- ================= DAILY JAM (rhythm minigame) ================= -->
+  <div id="rhythm" class="layer hidden">
+    <canvas id="rhythmCv"></canvas>
+    <button id="rhPauseBtn" class="rh-pausebtn">II</button>
+    <div id="rhOverlay" class="rh-overlay hidden">
+      <div class="rh-card">
+        <h2 id="rhTitle">DAILY JAM</h2>
+        <div id="rhText" class="rh-text"></div>
+        <div id="rhButtons" class="rh-buttons"></div>
+      </div>
+    </div>
+  </div>
+
   <!-- ================= COUNTDOWN / TOASTS ================= -->
   <div id="countdown" class="layer center hidden"><div class="count-num" id="countNum">3</div></div>
   <div id="toastHost"></div>
@@ -270,6 +293,8 @@
 <script src="js/props.js"></script>
 <script src="js/world.js"></script>
 <script src="js/data.js"></script>
+<script src="js/rhythm_chart.js"></script>
+<script src="js/rhythm.js"></script>
 <script src="js/ui.js"></script>
 <script src="js/game.js"></script>
 </body>

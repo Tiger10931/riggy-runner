@@ -97,11 +97,28 @@ const UI = (() => {
   /* ---------------- menu / stats ---------------- */
   function refreshStats() {
     const d = Save.d;
-    $('#bestScore').textContent = U.fmt(d.best);
+    $('#bestScore').textContent = U.fmt((d.bestByMode || {})[d.mode] || 0);
     $('#walletCoins').textContent = U.fmt(d.coins);
     $('#totalRuns').textContent = U.fmt(d.runs);
     $('#bestDist').textContent = U.fmt(d.bestDist);
     $$('.wallet').forEach(n => n.textContent = U.fmt(d.coins));
+    if (typeof Rhythm !== 'undefined') Rhythm.refreshButton();
+  }
+
+  /* ---------------- difficulty selector ---------------- */
+  function buildModes() {
+    const row = $('#modeRow');
+    if (!row) return;
+    $$('#modeRow .mode-btn').forEach(btn => {
+      const m = MODES[btn.dataset.mode];
+      btn.style.setProperty('--mc', m.color);
+      btn.classList.toggle('active', Save.d.mode === m.id);
+      btn.onclick = () => {
+        if (Save.d.mode !== m.id) { Save.d.mode = m.id; Save.save(); Sound.sfx.button(); }
+        buildModes(); refreshStats();
+      };
+    });
+    $('#modeDesc').textContent = (MODES[Save.d.mode] || MODES.normal).desc;
   }
 
   /* ---------------- character screen ---------------- */
@@ -315,7 +332,7 @@ const UI = (() => {
     el.fps.classList.toggle('hidden', !o.fps);
     $('#resetBtn').onclick = () => {
       if (confirm('Wipe every coin, unlock and high score?')) {
-        Save.reset(); refreshStats(); buildCharacters(); buildShop(); buildMissions(); bindSettings();
+        Save.reset(); refreshStats(); buildModes(); buildCharacters(); buildShop(); buildMissions(); bindSettings();
         toast('Progress reset', 'bad');
       }
     };
@@ -324,7 +341,8 @@ const UI = (() => {
   /* ---------------- game over ---------------- */
   function gameOver(res) {
     $('#goScore').textContent = U.fmt(res.score);
-    $('#goBest').textContent = 'BEST ' + U.fmt(Save.d.best);
+    const rm = MODES[res.mode] || MODES.normal;
+    $('#goBest').textContent = (rm.id === 'normal' ? 'BEST ' : 'BEST (' + rm.name + ') ') + U.fmt(res.best !== undefined ? res.best : Save.d.best);
     $('#goCoins').textContent = U.fmt(res.coins);
     $('#goDist').textContent = Math.floor(res.dist) + ' m';
     $('#goCombo').textContent = 'x' + res.maxCombo;
@@ -346,7 +364,7 @@ const UI = (() => {
     board.innerHTML = '<div class="board-head">YOUR TOP RUNS</div>' +
       (Save.d.runsLog || []).map((r, i) => {
         const mine = r.score === res.score && Math.floor(res.dist) === r.dist;
-        return `<div class="brow${mine ? ' mine' : ''}"><span>${i + 1}</span><b>${U.fmt(r.score)}</b><i>${r.dist} m</i></div>`;
+        return `<div class="brow${mine ? ' mine' : ''}"><span>${i + 1}</span><b>${U.fmt(r.score)}${r.mode && MODES[r.mode] && r.mode !== 'normal' ? ` <small style="color:${MODES[r.mode].color};font-size:.62em;letter-spacing:1px">${MODES[r.mode].name}</small>` : ''}</b><i>${r.dist} m</i></div>`;
       }).join('');
 
     const mBox = $('#goMissions');
@@ -419,6 +437,7 @@ const UI = (() => {
     nav($('#charBtn'), () => { buildCharacters(); el.characters.classList.remove('hidden'); refreshStats(); });
     nav($('#shopBtn'), () => { buildShop(); el.shop.classList.remove('hidden'); refreshStats(); });
     nav($('#missionsBtn'), () => { buildMissions(); el.missions.classList.remove('hidden'); refreshStats(); });
+    nav($('#rhythmBtn'), () => Rhythm.open());
     nav($('#howBtn'), () => el.how.classList.remove('hidden'));
     nav($('#settingsBtn'), () => { bindSettings(); el.settings.classList.remove('hidden'); });
 
@@ -438,7 +457,7 @@ const UI = (() => {
 
   return {
     el, show, hideAllSheets, toast, hud, powerups, combo, missionToast,
-    refreshStats, buildCharacters, buildShop, buildMissions, bindSettings,
+    refreshStats, buildModes, buildCharacters, buildShop, buildMissions, bindSettings,
     gameOver, countdown, animateMascots, bindButtons,
     get previewChar() { return previewChar; }
   };
