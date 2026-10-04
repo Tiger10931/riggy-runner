@@ -1,0 +1,1454 @@
+/* ============================================================
+   riggy.js — the mascot, drawn 100% in code.
+
+   Riggy is a round-headed blue cartoon critter with two tall
+   rabbit-ish ears, big white eyes, thin arms with white gloves,
+   red shorts and a long kinked tail (see reference art).
+
+   drawRiggy(ctx, opts) draws him with his feet at (x, y),
+   `scale` = 1 means roughly 200px tall.
+
+   Everything is parametric so the same rig animates for
+   run / jump / fall / roll / hover / jetpack / stumble / crash
+   and the menu idle + cheer poses.
+   ============================================================ */
+'use strict';
+
+const Riggy = (() => {
+
+  /* ---------------------------------------------------------
+     SKINS — each unlockable character is a palette + accessories
+     --------------------------------------------------------- */
+  const SKINS = {
+    classic: {
+      name: 'Classic Riggy',
+      body: '#1b74d1', bodyLo: '#0f4c8f', bodyHi: '#63b3f7',
+      shorts: '#e5262b', shortsLo: '#9c1114',
+      glove: '#ffffff', shoe: '#ffffff', shoeLo: '#d7dde6',
+      eye: '#ffffff', pupil: '#10161f', outline: '#10161f',
+      accessories: []
+    },
+    neon: {
+      name: 'Neon Riggy',
+      body: '#16e0c8', bodyLo: '#0a8d7d', bodyHi: '#9dfff2',
+      shorts: '#ff2ea6', shortsLo: '#a3126a',
+      glove: '#eafffb', shoe: '#eafffb', shoeLo: '#a9d8d1',
+      eye: '#ffffff', pupil: '#0a2530', outline: '#062028',
+      glow: '#16e0c8',
+      accessories: ['shades']
+    },
+    retro: {
+      name: 'Retro Riggy',
+      body: '#8b6bd8', bodyLo: '#513a8c', bodyHi: '#c3b0ff',
+      shorts: '#ffb020', shortsLo: '#a86c05',
+      glove: '#fff6df', shoe: '#fff6df', shoeLo: '#d3c6a9',
+      eye: '#ffffff', pupil: '#1a1030', outline: '#160f2b',
+      accessories: ['headphones']
+    },
+    golden: {
+      name: 'Golden Riggy',
+      body: '#ffc21c', bodyLo: '#b57f00', bodyHi: '#fff0b0',
+      shorts: '#2a2a2a', shortsLo: '#111111',
+      glove: '#fffdf2', shoe: '#fffdf2', shoeLo: '#ddd6bd',
+      eye: '#ffffff', pupil: '#2b1d00', outline: '#4a3200',
+      glow: '#ffc21c', sparkle: true,
+      accessories: ['crown']
+    },
+    coach: {
+      name: 'Coach Riggy',
+      body: '#1b74d1', bodyLo: '#0f4c8f', bodyHi: '#63b3f7',
+      shorts: '#1c2c4c', shortsLo: '#0b1526',
+      glove: '#ffffff', shoe: '#ff5a3c', shoeLo: '#b83a24',
+      eye: '#ffffff', pupil: '#10161f', outline: '#10161f',
+      accessories: ['cap', 'whistle']
+    },
+    shadow: {
+      name: 'Shadow Riggy',
+      body: '#2b3140', bodyLo: '#171b24', bodyHi: '#556074',
+      shorts: '#6b21f5', shortsLo: '#3d0da3',
+      glove: '#c8ccd6', shoe: '#c8ccd6', shoeLo: '#8b909b',
+      eye: '#ff4d6d', pupil: '#2a0008', outline: '#0a0c11',
+      glow: '#6b21f5',
+      accessories: ['cape']
+    },
+    frost: {
+      name: 'Frost Riggy',
+      body: '#a8e6ff', bodyLo: '#5da8cc', bodyHi: '#e7fbff',
+      shorts: '#2f6fd0', shortsLo: '#164a97',
+      glove: '#ffffff', shoe: '#ffffff', shoeLo: '#cfe6ef',
+      eye: '#ffffff', pupil: '#123048', outline: '#1d3f55',
+      glow: '#bdf0ff', frosty: true,
+      accessories: ['scarf']
+    },
+    inferno: {
+      name: 'Inferno Riggy',
+      body: '#ff5a1f', bodyLo: '#a82c02', bodyHi: '#ffb26b',
+      shorts: '#22252b', shortsLo: '#0d0f13',
+      glove: '#ffe9c9', shoe: '#ffe9c9', shoeLo: '#d0b190',
+      eye: '#fff3c2', pupil: '#3a1200', outline: '#4a1a00',
+      glow: '#ff7a2f', flames: true,
+      accessories: ['goggles']
+    },
+    punk: {
+      name: 'Punk Riggy',
+      body: '#3d3f4d', bodyLo: '#22242e', bodyHi: '#7b7f95',
+      shorts: '#c8102e', shortsLo: '#7a0a1c',
+      glove: '#1b1c22', shoe: '#f2ede1', shoeLo: '#bdb6a5',
+      eye: '#ffffff', pupil: '#0b0c10', outline: '#0b0c10',
+      accessories: ['mohawk', 'collar']
+    },
+    cadet: {
+      name: 'Cadet Riggy',
+      body: '#e9eef6', bodyLo: '#a8b3c4', bodyHi: '#ffffff',
+      shorts: '#2b3f8c', shortsLo: '#16255c',
+      glove: '#cfd8e6', shoe: '#d7dee9', shoeLo: '#9aa4b4',
+      eye: '#ffffff', pupil: '#132038', outline: '#1d2a44',
+      glow: '#9fd8ff',
+      accessories: ['helmet']
+    },
+    ranger: {
+      name: 'Ranger Riggy',
+      body: '#3f7d4f', bodyLo: '#245134', bodyHi: '#84c993',
+      shorts: '#a3743c', shortsLo: '#6a4720',
+      glove: '#efe3c8', shoe: '#6b4a2a', shoeLo: '#402a15',
+      eye: '#ffffff', pupil: '#14210f', outline: '#12210f',
+      accessories: ['ranger-hat', 'backpack']
+    },
+    phantom: {
+      name: 'Phantom Riggy',
+      body: '#7ff0e0', bodyLo: '#2c7f79', bodyHi: '#e2fffb',
+      shorts: '#1c2a3f', shortsLo: '#0c1523',
+      glove: '#d8fffa', shoe: '#d8fffa', shoeLo: '#9ac9c4',
+      eye: '#eafffd', pupil: '#0b2b2c', outline: '#123536',
+      glow: '#7ff0e0', ghostly: true,
+      accessories: ['cape']
+    },
+    rosy: {
+      name: 'Rosy Rabbit',
+      body: '#e97fce', bodyLo: '#af4d9c', bodyHi: '#ffd4f2',
+      shorts: '#1fa860', shortsLo: '#12703f',
+      glove: '#ffffff', shoe: '#e97fce', shoeLo: '#af4d9c',
+      eye: '#ffffff', pupil: '#8a5a22', outline: '#241221',
+      noShorts: true, roundTail: true,
+      accessories: ['eyelashes', 'dress']
+    },
+    ferrick: {
+      name: 'Ferrick the Fox',
+      body: '#f4882d', bodyLo: '#b8600f', bodyHi: '#ffc989',
+      shorts: '#2c5f2d', shortsLo: '#173a18',
+      glove: '#f4882d', shoe: '#2b2b2e', shoeLo: '#151517',
+      eye: '#3ed660', pupil: '#12210f', outline: '#1c1006',
+      tailTip: '#fff7ec',
+      muzzle: true, muzzleColor: '#fff7ec',
+      foxEars: true, bushyTail: true,
+      noShorts: true,
+      sleeves: true, sleeveColor: '#2f6fe0', sleeveColorLo: '#1a3f96', sleeveColorHi: '#8ab2ff',
+      pants: true, pantsColor: '#2c5f2d', pantsColorLo: '#173a18', pantsColorHi: '#5c9a52',
+      pack: '#152a63', packLo: '#0c1a40', packOutline: '#080f22',
+      accessories: ['hoodCollar', 'backpack']
+    }
+  };
+
+  /* ---------------------------------------------------------
+     NEEGY — secret character drawn from a sprite image instead of
+     the procedural rig. Falls back to a gold rig until it loads.
+     --------------------------------------------------------- */
+  SKINS.neegy = Object.assign({}, SKINS.golden, { name: 'Neegy', accessories: [], sparkle: false });
+  const NEEGY_IMG = new Image();
+  NEEGY_IMG.src = 'img/neegy.png';
+  const neegyReady = () => NEEGY_IMG.complete && NEEGY_IMG.naturalWidth > 0;
+
+  /* The sprite is sliced into head / torso / two arms / two legs on first use,
+     so each piece can swing around its own joint. Coordinates are in sprite px
+     (sprite is 199 x 572; hips ~y410, shoulders ~y225, neck base ~y203). */
+  let NEEGY_PARTS = null;
+  function neegyParts() {
+    if (NEEGY_PARTS) return NEEGY_PARTS;
+    const W = NEEGY_IMG.naturalWidth, H = NEEGY_IMG.naturalHeight;
+    const sx = W / 199, sy = H / 572;                     // keep cuts right if the art is ever swapped
+    const make = (fn) => {
+      const c = document.createElement('canvas'); c.width = W; c.height = H;
+      const x = c.getContext('2d'); x.save(); x.scale(sx, sy); fn(x); x.restore();
+      return c;
+    };
+    const poly = (x, pts) => { x.beginPath(); pts.forEach(([a, b], i) => i ? x.lineTo(a, b) : x.moveTo(a, b)); x.closePath(); };
+    const img = (x) => x.drawImage(NEEGY_IMG, 0, 0, 199, 572);
+    const LA = [[0, 190], [41, 190], [41, 340], [28, 340], [28, 424], [0, 424]];
+    const RA = [[100, 190], [199, 190], [199, 424], [118, 424], [118, 340], [100, 340]];
+    NEEGY_PARTS = {
+      head:  make(x => { x.beginPath(); x.rect(0, 0, 199, 210); x.clip(); img(x); }),
+      torso: make(x => { img(x); x.globalCompositeOperation = 'destination-out';
+                         x.clearRect(0, 0, 199, 198); x.clearRect(0, 422, 199, 160);
+                         poly(x, LA); x.fill(); poly(x, RA); x.fill(); }),
+      armL:  make(x => { poly(x, LA); x.clip(); img(x); }),
+      armR:  make(x => { poly(x, RA); x.clip(); img(x); }),
+      legL:  make(x => { x.beginPath(); x.rect(0, 406, 70, 170); x.clip(); img(x); }),
+      legR:  make(x => { x.beginPath(); x.rect(70, 406, 129, 170); x.clip(); img(x); })
+    };
+    return NEEGY_PARTS;
+  }
+
+  /* pose per state — all angles in radians, offsets in sprite px, positive arm angle on the
+     left arm swings it outward/up (right arm mirrors with a negative angle) */
+  function neegyPose(state, t, phase, extra) {
+    const P = { bob: 0, torsoRot: 0, headRot: 0, headDy: 0, armL: .08, armR: -.08,
+                legL: 0, legR: 0, legLy: 0, legRy: 0, sy: 1, rot: 0, scale: 1, pivot: 0, dx: 0 };
+    const s = Math.sin(phase), c = Math.cos(phase);
+    switch (state) {
+      case 'run': {
+        P.bob = -Math.abs(c) * 20;
+        P.legL = s * .6;  P.legR = -s * .6;
+        P.legLy = -Math.max(0, s) * 34;  P.legRy = -Math.max(0, -s) * 34;
+        P.armL = .14 + s * .6;  P.armR = -.14 + s * .6;
+        P.torsoRot = s * .05;  P.headRot = -s * .07;
+        P.headDy = -Math.abs(Math.cos(phase - .9)) * 7;
+        P.sy = 1 + (Math.abs(c) - .5) * .03;
+        P.rot = .03 + s * .015;
+        break;
+      }
+      case 'jump': {
+        const vy = extra.vy || 0, k = U.clamp(Math.abs(vy) / 1800, 0, 1);
+        P.armL = 2.2 + Math.sin(t * 16) * .18; P.armR = -2.2 - Math.sin(t * 16 + 1) * .18;
+        P.legL = -.55; P.legLy = -34; P.legR = .35; P.legRy = -12;
+        P.headRot = Math.sin(t * 10) * .05; P.headDy = -8 * k;
+        P.sy = 1 + k * .07; P.bob = -6;
+        break;
+      }
+      case 'roll': {
+        P.armL = -.2; P.armR = .2;
+        P.legL = 1.15; P.legR = -1.15; P.legLy = -46; P.legRy = -46;
+        P.torsoRot = .1; P.headRot = .15;
+        P.rot = (extra.rollT || 0) * Math.PI * 2; P.scale = .72; P.pivot = 0.42;
+        P.bob = -10;
+        break;
+      }
+      case 'hover': {
+        const w = Math.sin(t * 3);
+        P.armL = 1.0 + w * .12; P.armR = -1.0 + w * .12;
+        P.legL = .24; P.legR = -.24;
+        P.torsoRot = w * .06; P.headRot = -w * .05; P.rot = w * .025; P.bob = -4;
+        break;
+      }
+      case 'jet': {
+        P.armL = 2.6; P.armR = -2.6;
+        P.legL = .2 + Math.sin(t * 9) * .28;  P.legR = -.2 - Math.sin(t * 9 + 1.3) * .28;
+        P.legLy = -14; P.legRy = -14;
+        P.bob = Math.sin(t * 26) * 3 - 12; P.headRot = Math.sin(t * 12) * .06; P.rot = .1;
+        break;
+      }
+      case 'stumble': {
+        const f = Math.sin(t * 28);
+        P.armL = 1.5 + f * .8; P.armR = -1.5 + Math.sin(t * 28 + 2) * .8;
+        P.legL = f * .5; P.legR = -f * .5; P.legLy = -Math.max(0, f) * 20; P.legRy = -Math.max(0, -f) * 20;
+        P.torsoRot = f * .1; P.headRot = Math.sin(t * 20) * .2; P.rot = .14; P.bob = -6;
+        break;
+      }
+      case 'crash': {
+        const k = U.clamp(extra.crashT || 0, 0, 1);
+        P.armL = 1.6 + Math.sin(t * 22) * .5 * (1 - k); P.armR = -1.6 - Math.sin(t * 22 + 1) * .5 * (1 - k);
+        P.legL = .5; P.legR = -.5; P.legLy = -20 * k; P.legRy = -20 * k;
+        P.headRot = .45 * k; P.rot = -k * 1.5; P.pivot = .42 * k; P.bob = -k * 10;
+        break;
+      }
+      case 'cheer': {
+        const h = Math.abs(Math.sin(t * 3.2));
+        P.bob = -h * 34;
+        P.armL = 2.45 + Math.sin(t * 6.4) * .35; P.armR = -2.45 - Math.sin(t * 6.4 + Math.PI) * .35;
+        P.legL = .14; P.legR = -.14; P.legLy = -h * 14; P.legRy = -h * 14;
+        P.headRot = Math.sin(t * 3.2) * .08; P.torsoRot = Math.sin(t * 3.2) * .03;
+        P.sy = 1 + (h - .5) * .035;
+        break;
+      }
+      default: {                                           // idle: breathing, weight shift, glances
+        const br = Math.sin(t * 2);
+        P.sy = 1 + br * .01;
+        P.armL = .08 + br * .035 + Math.sin(t * .9) * .03; P.armR = -.08 - br * .035 + Math.sin(t * .9 + 1) * .03;
+        P.torsoRot = Math.sin(t * .9) * .018; P.headRot = Math.sin(t * 1.3) * .035 + Math.sin(t * .37) * .03;
+        P.headDy = br * 1.6; P.dx = Math.sin(t * .9) * 2;
+      }
+    }
+    return P;
+  }
+
+  function drawNeegy(ctx, state, t, phase, extra) {
+    const parts = neegyParts();
+    const H = 215, k = H / NEEGY_IMG.naturalHeight * (572 / 572);
+    const sc = H / 572;                                    // sprite-px -> screen-px
+    const P = neegyPose(state, t, phase, extra);
+
+    // soft golden aura (stays put while the body moves)
+    ctx.save();
+    const g = ctx.createRadialGradient(0, -H * .55, 8, 0, -H * .55, H * .75);
+    g.addColorStop(0, 'rgba(255,200,40,.28)'); g.addColorStop(1, 'rgba(255,200,40,0)');
+    ctx.fillStyle = g; ctx.fillRect(-H, -H * 1.5, H * 2, H * 1.7);
+    ctx.restore();
+
+    ctx.save();
+    // whole-body transform: tilt / tumble / squash-stretch (about the feet, or the body centre when tumbling)
+    const py = -H * P.pivot;
+    ctx.translate(P.dx * sc, 0);
+    ctx.translate(0, py); ctx.rotate(P.rot); ctx.scale(P.scale / Math.sqrt(P.sy), P.scale * P.sy); ctx.translate(0, -py);
+    ctx.scale(sc, sc); ctx.translate(-199 / 2, -572);      // from here on: sprite px, origin = sprite top-left
+
+    const part = (img, jx, jy, rot, dx, dy) => {
+      ctx.save();
+      ctx.translate(jx + dx, jy + dy); ctx.rotate(rot); ctx.translate(-jx, -jy);
+      ctx.drawImage(img, 0, 0);
+      ctx.restore();
+    };
+    // legs (behind), torso, arms, head
+    part(parts.legR, 100, 410, P.legR, 0, P.legRy);
+    part(parts.legL,  48, 410, P.legL, 0, P.legLy);
+    part(parts.torso, 70, 410, P.torsoRot, 0, P.bob);
+    part(parts.armR, 100, 228, P.armR, 0, P.bob);
+    part(parts.armL,  38, 228, P.armL, 0, P.bob);
+    // head rides on the torso: rotate about the neck base after the torso's own sway
+    ctx.save();
+    ctx.translate(70, 410 + P.bob); ctx.rotate(P.torsoRot); ctx.translate(-70, -410);
+    part(parts.head, 68, 204, P.headRot, 0, P.headDy);
+    ctx.restore();
+    ctx.restore();
+
+    // sparkles
+    for (let i = 0; i < 5; i++) {
+      const a = t * 2 + i * 1.4;
+      const px = Math.cos(a) * 62, py2 = -H * .55 + Math.sin(a * 1.3) * 80;
+      const s2 = 3 + Math.sin(a * 3) * 2;
+      U.star(ctx, px, py2, 4, s2 + 3, s2 * .4);
+      ctx.fillStyle = 'rgba(255,245,190,.9)'; ctx.fill();
+    }
+  }
+
+  /* ---------------------------------------------------------
+     POSE SOLVER — turns (state, phase) into joint positions
+     Local space: feet at (0,0), up is -y, ~200 units tall.
+     --------------------------------------------------------- */
+  function solve(state, t, phase, extra = {}, skinId = 'classic') {
+    const p = phase;                                   // 0..2PI run cycle
+    const s = Math.sin(p), c = Math.cos(p);
+    const isRosy = skinId === 'rosy';                   // Rosy hops rather than strides — see rabbit branches below
+    const j = {
+      root: { x: 0, y: -0 },        // pelvis offset
+      lean: 0,                      // whole-body lean (radians)
+      squash: 1, stretch: 1,
+      head: { x: 0, y: -120, r: 42, tilt: 0, turn: extra.turn || 0 },
+      ear: { l: -0.12, r: 0.12, flop: 0 },
+      torso: { x: 0, y: -88 },
+      hipL: { x: -12, y: -54 }, hipR: { x: 12, y: -54 },
+      kneeL: { x: -14, y: -21 }, kneeR: { x: 14, y: -26 },
+      footL: { x: -14, y: -2 }, footR: { x: 14, y: -4 },
+      shL: { x: -20, y: -84 }, shR: { x: 20, y: -104 },
+      elbL: { x: -32, y: -74 }, elbR: { x: 32, y: -84 },
+      handL: { x: -30, y: -52 }, handR: { x: 30, y: -62 },
+      tail: 0, tailWag: 0,
+      blink: 0, mouth: 'smile', browAngry: 0,
+      rot: 0, alphaGhost: 1
+    };
+
+    switch (state) {
+
+      case 'run': {
+        if (isRosy) {
+          // Normal alternating run (legs and arms opposite-phase like a
+          // regular stride, not a synchronized hop) — just her own timing,
+          // lean, and bigger ear flop so it doesn't read as Riggy's cycle.
+          const bob = Math.abs(s) * 7;
+          j.root.y = -bob;
+          j.head.y = -150 - bob * .5 + Math.sin(p * 2) * 1.5;
+          j.head.tilt = s * .06;
+          j.lean = 0.12 + Math.abs(s) * .025;
+          j.ear.flop = -s * .5;
+          j.ear.l = -0.20 - s * .12; j.ear.r = 0.20 - s * .12;
+
+          const strideF = 23, lift = 20;
+          const hipSway = s * 2;
+          const hipRise = Math.cos(p * 2) * 1.5;
+          j.hipL = { x: -11 + hipSway, y: -54 + hipRise };
+          j.hipR = { x: 11 - hipSway, y: -54 - hipRise };
+          j.footL.x = -12 + s * strideF;
+          j.footL.y = -4 - Math.max(0, s) * lift;
+          j.kneeL.x = -13 + s * strideF * .52;
+          j.kneeL.y = -26 - Math.max(0, s) * lift * .5 - Math.max(0, -s) * 5;
+
+          j.footR.x = 12 - s * strideF;
+          j.footR.y = -4 - Math.max(0, -s) * lift;
+          j.kneeR.x = 13 - s * strideF * .52;
+          j.kneeR.y = -26 - Math.max(0, -s) * lift * .5 - Math.max(0, s) * 5;
+
+          // arms counter-swing, kept closer to the body than Riggy's
+          j.handL.x = -22 - s * 6; j.handL.y = -64 - s * 20;
+          j.elbL.x = -28 - s * 3; j.elbL.y = -82 - s * 8;
+          j.handR.x = 22 + s * 6; j.handR.y = -64 + s * 20;
+          j.elbR.x = 28 + s * 3; j.elbR.y = -82 + s * 8;
+
+          j.tailWag = Math.sin(p + .6) * .4;
+          j.mouth = 'determined';
+          break;
+        }
+
+        const bob = Math.abs(Math.sin(p)) * 6;
+        j.root.y = -bob;
+        j.head.y = -150 - bob * .5 + Math.sin(p * 2) * 1.5;
+        j.head.tilt = s * .05;
+        j.lean = 0.10 + Math.abs(s) * 0.02;
+        j.ear.flop = -s * .30;
+        j.ear.l = -0.16 - s * .07; j.ear.r = 0.16 - s * .07;
+
+        // Legs — both thighs begin inside the shorts and remain anchored there
+        // while the knees and feet swing. This prevents either leg appearing
+        // detached when it reaches the front or back of the stride.
+        const strideF = 22, lift = 22;
+        const hipSway = s * 2;
+        const hipRise = Math.cos(p * 2) * 1.5;
+        j.hipL = { x: -12 + hipSway, y: -54 + hipRise };
+        j.hipR = { x: 12 - hipSway, y: -54 - hipRise };
+        j.footL.x = -13 + s * strideF;
+        j.footL.y = -4 - Math.max(0, s) * lift;
+        j.kneeL.x = -14 + s * strideF * .52;
+        j.kneeL.y = -27 - Math.max(0, s) * lift * .5 - Math.max(0, -s) * 5;
+
+        j.footR.x = 13 - s * strideF;
+        j.footR.y = -4 - Math.max(0, -s) * lift;
+        j.kneeR.x = 14 - s * strideF * .52;
+        j.kneeR.y = -27 - Math.max(0, -s) * lift * .5 - Math.max(0, s) * 5;
+
+        // arms — counter swing
+        j.handL.x = -26 - s * 8; j.handL.y = -66 - s * 26;
+        j.elbL.x = -32 - s * 4; j.elbL.y = -86 - s * 10;
+        j.handR.x = 26 + s * 8; j.handR.y = -66 + s * 26;
+        j.elbR.x = 32 + s * 4; j.elbR.y = -86 + s * 10;
+
+        j.tail = -0.5 + Math.sin(p * .5 + 1) * .25;
+        j.tailWag = Math.sin(p + .6) * .35;
+        j.mouth = 'determined';
+        break;
+      }
+
+      case 'jump': {
+        const up = U.clamp(extra.vy / 900, -1, 1);     // +1 rising
+        if (isRosy) {
+          // A rabbit's jump is a bigger, snappier leap — ears pin flat back
+          // on the way up and the legs tuck tighter than Riggy's whoop.
+          j.lean = 0.1 - up * .08;
+          j.head.y = -154; j.head.tilt = -up * .08;
+          j.ear.flop = -0.85 - up * .5;
+          j.ear.l = -0.4; j.ear.r = 0.4;
+          j.stretch = 1 + up * .08;
+          const tuck = U.clamp(up, 0, 1);
+          j.kneeL = { x: -16, y: -36 - tuck * 10 };
+          j.kneeR = { x: 16, y: -36 - tuck * 10 };
+          j.footL = { x: -18 - tuck * 4, y: -20 - tuck * 22 };
+          j.footR = { x: 18 + tuck * 4, y: -20 - tuck * 22 };
+          j.elbL = { x: -34, y: -104 }; j.handL = { x: -38, y: -132 - tuck * 8 };
+          j.elbR = { x: 34, y: -104 }; j.handR = { x: 38, y: -132 - tuck * 8 };
+          j.tailWag = Math.sin(t * 12) * .15;
+          j.mouth = up > 0 ? 'open' : 'oh';
+          break;
+        }
+        j.lean = 0.06 - up * .06;
+        j.head.y = -152; j.head.tilt = -up * .06;
+        j.ear.flop = -0.55 - up * .35;
+        j.ear.l = -0.30; j.ear.r = 0.30;
+        j.stretch = 1 + up * .06;
+        // tuck legs when rising, reach down when falling
+        const tuck = U.clamp(up, 0, 1);
+        j.kneeL = { x: -18, y: -34 - tuck * 8 };
+        j.kneeR = { x: 18, y: -34 - tuck * 8 };
+        j.footL = { x: -22 - tuck * 6, y: -18 - tuck * 20 };
+        j.footR = { x: 22 + tuck * 6, y: -14 - tuck * 26 };
+        // arms up in a whoop
+        j.elbL = { x: -40, y: -110 }; j.handL = { x: -46, y: -140 - tuck * 10 };
+        j.elbR = { x: 40, y: -110 }; j.handR = { x: 46, y: -140 - tuck * 10 };
+        j.tail = -1.15; j.tailWag = Math.sin(t * 12) * .2;
+        j.mouth = up > 0 ? 'open' : 'oh';
+        break;
+      }
+
+      case 'roll': {
+        // tight cannonball: one clean flip, limbs tucked inside the silhouette
+        j.rot = extra.rollT * Math.PI * 2;
+        j.root.y = -24; j.squash = .9; j.lean = 0;
+        j.head.y = -66; j.head.r = 40; j.head.tilt = .1;
+        j.ear.flop = -1.3; j.ear.l = -.3; j.ear.r = .3;
+        j.torso.y = -54;
+        j.hipL = { x: -11, y: -42 }; j.hipR = { x: 11, y: -42 };
+        j.kneeL = { x: -16, y: -62 }; j.kneeR = { x: 16, y: -62 };
+        j.footL = { x: -10, y: -50 }; j.footR = { x: 10, y: -50 };
+        j.shL = { x: -16, y: -56 }; j.shR = { x: 16, y: -56 };
+        j.elbL = { x: -20, y: -44 }; j.handL = { x: -9, y: -40 };
+        j.elbR = { x: 20, y: -44 }; j.handR = { x: 9, y: -40 };
+        j.tail = -1.7;
+        j.mouth = 'grit';
+        break;
+      }
+
+      case 'hover': {
+        const wob = Math.sin(t * 6) * 3;
+        j.root.y = -6 + wob;
+        j.lean = 0.16;
+        j.head.y = -150 + wob * .5; j.head.tilt = .06;
+        j.ear.flop = -0.7 + Math.sin(t * 5) * .12;
+        j.kneeL = { x: -22, y: -30 }; j.kneeR = { x: 20, y: -30 };
+        j.footL = { x: -34, y: -8 }; j.footR = { x: 26, y: -8 };
+        j.elbL = { x: -42, y: -96 }; j.handL = { x: -56, y: -104 + wob };
+        j.elbR = { x: 40, y: -96 }; j.handR = { x: 54, y: -92 - wob };
+        j.tail = -0.9 + Math.sin(t * 4) * .2;
+        j.mouth = 'smile';
+        break;
+      }
+
+      case 'jet': {
+        const wob = Math.sin(t * 9) * 2.5;
+        j.lean = -0.14; j.root.y = wob;
+        j.head.y = -150; j.head.tilt = -.08;
+        j.ear.flop = -1.0 + Math.sin(t * 8) * .18;
+        j.kneeL = { x: -16, y: -28 }; j.kneeR = { x: 16, y: -28 };
+        j.footL = { x: -18, y: -2 + Math.sin(t * 7) * 3 };
+        j.footR = { x: 18, y: -2 + Math.sin(t * 7 + 1.6) * 3 };
+        j.elbL = { x: -44, y: -92 }; j.handL = { x: -58, y: -74 };
+        j.elbR = { x: 44, y: -92 }; j.handR = { x: 58, y: -74 };
+        j.tail = -0.4 + Math.sin(t * 6) * .25;
+        j.mouth = 'open';
+        break;
+      }
+
+      case 'stumble': {
+        const f = Math.sin(t * 26);
+        j.lean = 0.34; j.root.y = -3;
+        j.head.y = -146; j.head.tilt = .18 + f * .08;
+        j.ear.flop = -.2 + f * .5;
+        j.kneeL = { x: -24, y: -30 }; j.kneeR = { x: 20, y: -24 };
+        j.footL = { x: -34, y: -6 }; j.footR = { x: 26, y: -2 };
+        j.elbL = { x: -44, y: -118 }; j.handL = { x: -52, y: -146 + f * 10 };
+        j.elbR = { x: 44, y: -116 }; j.handR = { x: 54, y: -142 - f * 10 };
+        j.tail = -1.4; j.tailWag = f * .5;
+        j.mouth = 'oh'; j.browAngry = 1;
+        break;
+      }
+
+      case 'crash': {
+        const k = U.clamp(extra.crashT || 0, 0, 1);
+        j.rot = -k * 1.9;
+        j.root.y = -k * 12;
+        j.lean = 0.2;
+        j.head.y = -150 + k * 20; j.head.tilt = .4 * k;
+        j.ear.flop = -1.4 * k;
+        j.kneeL = { x: -30, y: -40 }; j.kneeR = { x: 26, y: -34 };
+        j.footL = { x: -50 - k * 16, y: -40 - k * 22 };
+        j.footR = { x: 44 + k * 12, y: -26 - k * 18 };
+        j.elbL = { x: -48, y: -110 }; j.handL = { x: -66 - k * 12, y: -132 };
+        j.elbR = { x: 48, y: -104 }; j.handR = { x: 66 + k * 12, y: -126 };
+        j.tail = -1.9; j.mouth = 'x'; j.blink = 1; j.browAngry = 1;
+        break;
+      }
+
+      case 'cheer': {
+        if (isRosy) {
+          // Bunny cheer: a straight-up hop with both paws thrown up, rather
+          // than Riggy's side-to-side sway.
+          const b = Math.abs(Math.sin(t * 3.2));
+          j.root.y = -b * 9;
+          j.head.y = -153 + Math.sin(t * 3.2) * 2; j.head.tilt = Math.sin(t * 3.2) * .06;
+          j.ear.flop = -0.3 - b * .5;
+          j.ear.l = -0.35; j.ear.r = 0.35;
+          j.shL = { x: -18, y: -108 }; j.shR = { x: 18, y: -108 };
+          j.elbL = { x: -32, y: -128 }; j.handL = { x: -36, y: -164 + b * 4 };
+          j.elbR = { x: 32, y: -128 }; j.handR = { x: 36, y: -164 + b * 4 };
+          j.hipL = { x: -11, y: -56 - b * 4 }; j.hipR = { x: 11, y: -56 - b * 4 };
+          j.kneeL = { x: -13, y: -30 - b * 3 }; j.kneeR = { x: 13, y: -30 - b * 3 };
+          j.footL = { x: -13, y: -4 - b * 2 }; j.footR = { x: 13, y: -4 - b * 2 };
+          j.mouth = 'grin';
+          break;
+        }
+        const b = Math.sin(t * 3);
+        j.root.y = -Math.abs(Math.sin(t * 3)) * 6;
+        j.head.y = -152 + b * 2; j.head.tilt = b * .05;
+        j.ear.flop = -0.12 + b * .16;
+        j.shL = { x: -22, y: -104 }; j.shR = { x: 22, y: -104 };
+        j.elbL = { x: -40, y: -122 }; j.handL = { x: -50, y: -158 + b * 6 };
+        j.elbR = { x: 40, y: -122 }; j.handR = { x: 50, y: -158 - b * 6 };
+        j.hipL = { x: -13, y: -56 }; j.hipR = { x: 13, y: -56 };
+        j.kneeL = { x: -15, y: -28 }; j.kneeR = { x: 15, y: -28 };
+        j.footL = { x: -16, y: -4 }; j.footR = { x: 16, y: -4 };
+        j.tail = -0.75 + Math.sin(t * 2.4) * .3;
+        j.mouth = 'grin';
+        break;
+      }
+
+      case 'idle':
+      default: {
+        if (isRosy) {
+          // Rosy rocks gently on her toes with a twitchy-ear idle instead of
+          // Riggy's arm-swinging idle.
+          const b = Math.sin(t * 1.8);
+          const twitchOn = Math.sin(t * .7) > .55;
+          const twitch = twitchOn ? Math.sin(t * 11) : 0;
+          j.root.y = Math.abs(b) * 1.2 - 0.5;
+          j.head.y = -150 + b * 1.6; j.head.tilt = Math.sin(t * .6) * .03 + twitch * .02;
+          j.ear.l = -0.10 + twitch * .12; j.ear.r = 0.14 - twitch * .10;
+          j.ear.flop = Math.sin(t * 1.1) * .16 + twitch * .3;
+          j.shL = { x: -19, y: -100 }; j.shR = { x: 19, y: -100 };
+          j.elbL = { x: -26, y: -84 }; j.handL = { x: -24, y: -62 + b * .6 };
+          j.elbR = { x: 26, y: -84 }; j.handR = { x: 24, y: -62 - b * .6 };
+          j.hipL = { x: -12, y: -55 }; j.hipR = { x: 12, y: -55 };
+          j.kneeL = { x: -13, y: -27 }; j.kneeR = { x: 13, y: -27 };
+          j.footL = { x: -14, y: -3 }; j.footR = { x: 14, y: -3 };
+          j.mouth = 'smile';
+          break;
+        }
+        const b = Math.sin(t * 2);
+        j.root.y = b * 1.6;
+        j.head.y = -150 + b * 2.6; j.head.tilt = Math.sin(t * .8) * .04;
+        j.ear.flop = Math.sin(t * 1.6) * .1;
+        j.shL = { x: -21, y: -102 }; j.shR = { x: 21, y: -102 };
+        j.elbL = { x: -30, y: -86 }; j.handL = { x: -30, y: -60 + b };
+        j.elbR = { x: 30, y: -86 }; j.handR = { x: 30, y: -60 - b };
+        j.hipL = { x: -13, y: -56 }; j.hipR = { x: 13, y: -56 };
+        j.kneeL = { x: -14, y: -28 + b * .5 }; j.kneeR = { x: 14, y: -28 - b * .5 };
+        j.footL = { x: -15, y: -3 }; j.footR = { x: 15, y: -3 };
+        j.tail = -0.6 + Math.sin(t * 1.3) * .35;
+        j.tailWag = Math.sin(t * 1.3) * .3;
+        j.mouth = 'smile';
+        break;
+      }
+    }
+    return j;
+  }
+
+  /* ---------------------------------------------------------
+     PART DRAWING
+     --------------------------------------------------------- */
+
+  function limb(ctx, a, b, cP, w, skin, taper = .7) {
+    // tapered quadratic limb with the cartoon outline
+    ctx.save();
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.strokeStyle = skin.outline; ctx.lineWidth = w + 6;
+    ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.quadraticCurveTo(cP.x, cP.y, b.x, b.y); ctx.stroke();
+    ctx.strokeStyle = skin.body; ctx.lineWidth = w;
+    ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.quadraticCurveTo(cP.x, cP.y, b.x, b.y); ctx.stroke();
+    // core shadow on the far side
+    ctx.strokeStyle = U.rgba(skin.bodyLo, .45); ctx.lineWidth = w * .36;
+    ctx.beginPath();
+    ctx.moveTo(a.x + w * .22, a.y); ctx.quadraticCurveTo(cP.x + w * .24, cP.y, b.x + w * .22, b.y);
+    ctx.stroke();
+    // inner highlight
+    ctx.strokeStyle = U.rgba(skin.bodyHi, .55); ctx.lineWidth = w * .3;
+    ctx.beginPath();
+    ctx.moveTo(a.x - w * .2, a.y); ctx.quadraticCurveTo(cP.x - w * .22, cP.y, b.x - w * .2, b.y);
+    ctx.stroke();
+    // joint cap so knees/elbows read round
+    U.ellipse(ctx, cP.x, cP.y, w * .34, w * .34);
+    ctx.fillStyle = U.rgba(skin.bodyLo, .25); ctx.fill();
+    ctx.restore();
+  }
+
+  function glove(ctx, p, r, skin, rot = 0) {
+    ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(rot);
+    U.ellipse(ctx, 0, 0, r, r * .92); U.ink(ctx, skin.glove, 4.5, skin.outline);
+    // cuff
+    ctx.save();
+    ctx.beginPath(); ctx.arc(0, 0, r * .98, Math.PI * .15, Math.PI * .85); ctx.strokeStyle = skin.outline;
+    ctx.lineWidth = 3; ctx.stroke();
+    ctx.restore();
+    // knuckle sheen
+    U.ellipse(ctx, -r * .28, -r * .3, r * .3, r * .2, -.5);
+    ctx.fillStyle = 'rgba(255,255,255,.85)'; ctx.fill();
+    ctx.restore();
+  }
+
+  function shoe(ctx, p, skin, flip = 1, angle = 0) {
+    ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(angle); ctx.scale(flip, 1);
+    // chunky cartoon sneaker: rounded heel, sweeping toe
+    ctx.beginPath();
+    ctx.moveTo(-13, -4);
+    ctx.quadraticCurveTo(-13, -13, -3, -12);
+    ctx.quadraticCurveTo(9, -12, 15, -5);
+    ctx.quadraticCurveTo(20, -1, 19, 3);
+    ctx.lineTo(-13, 3);
+    ctx.closePath();
+    U.ink(ctx, skin.shoe, 4.5, skin.outline);
+    // upper shading
+    ctx.save(); ctx.clip();
+    ctx.fillStyle = U.rgba(skin.shoeLo, .55); ctx.fillRect(-14, -2, 36, 8);
+    ctx.fillStyle = 'rgba(255,255,255,.35)'; ctx.fillRect(-12, -12, 10, 6);
+    ctx.restore();
+    // midsole
+    U.roundRect(ctx, -14, 0, 34, 7, 3.5);
+    U.ink(ctx, skin.shoeLo, 3, skin.outline);
+    // side swoosh
+    ctx.beginPath();
+    ctx.moveTo(-6, -1); ctx.quadraticCurveTo(4, -8, 14, -5);
+    ctx.strokeStyle = U.rgba(skin.outline, .75); ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.stroke();
+    // laces
+    ctx.strokeStyle = skin.outline; ctx.lineWidth = 2;
+    for (let i = 0; i < 2; i++) {
+      ctx.beginPath();
+      ctx.moveTo(-6 + i * 5, -11 + i * 1.5); ctx.lineTo(-1 + i * 5, -6 + i * 1.5);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  function ear(ctx, baseX, baseY, len, w, tilt, flop, skin) {
+    ctx.save();
+    ctx.translate(baseX, baseY); ctx.rotate(tilt + flop);
+    const tipX = Math.sin(flop * .8) * len * .18;
+    ctx.beginPath();
+    ctx.moveTo(-w / 2, 6);
+    ctx.quadraticCurveTo(-w / 2 - 2, -len * .55, tipX - w / 2 + 1, -len);
+    ctx.quadraticCurveTo(tipX, -len - w * .62, tipX + w / 2 - 1, -len);
+    ctx.quadraticCurveTo(w / 2 + 2, -len * .55, w / 2, 6);
+    ctx.closePath();
+    U.ink(ctx, skin.body, 5, skin.outline);
+    // inner ear shading
+    ctx.beginPath();
+    ctx.moveTo(-w * .12, 0);
+    ctx.quadraticCurveTo(-w * .1, -len * .5, tipX, -len * .78);
+    ctx.quadraticCurveTo(w * .22, -len * .5, w * .18, 0);
+    ctx.closePath();
+    ctx.fillStyle = U.rgba(skin.bodyLo, .55); ctx.fill();
+    // rim light down the leading edge
+    ctx.beginPath();
+    ctx.moveTo(-w * .34, 0);
+    ctx.quadraticCurveTo(-w * .42, -len * .55, tipX - w * .22, -len * .88);
+    ctx.strokeStyle = U.rgba(skin.bodyHi, .6); ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.stroke();
+    ctx.restore();
+  }
+
+  function tail(ctx, angle, wag, skin, scaleFlip = 1) {
+    // long, kinked, tapering tail exactly like the reference doodle
+    ctx.save();
+    ctx.translate(-4 * scaleFlip, -52);
+    ctx.rotate(angle * .35 + wag * .2);
+    const pts = [
+      [0, 0],
+      [-26 * scaleFlip, -6 + wag * 6],
+      [-58 * scaleFlip, -14 + wag * 10],
+      [-74 * scaleFlip, 10 + wag * 6],
+      [-70 * scaleFlip, 42],
+      [-58 * scaleFlip, 56 - wag * 4]
+    ];
+    ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+    ctx.strokeStyle = skin.outline; ctx.lineWidth = 17;
+    ctx.beginPath();
+    ctx.moveTo(pts[0][0], pts[0][1]);
+    for (let i = 1; i < pts.length - 1; i++) {
+      const xc = (pts[i][0] + pts[i + 1][0]) / 2, yc = (pts[i][1] + pts[i + 1][1]) / 2;
+      ctx.quadraticCurveTo(pts[i][0], pts[i][1], xc, yc);
+    }
+    ctx.lineTo(pts[pts.length - 1][0], pts[pts.length - 1][1]);
+    ctx.stroke();
+    ctx.strokeStyle = skin.body; ctx.lineWidth = 11; ctx.stroke();
+    ctx.strokeStyle = U.rgba(skin.bodyHi, .45); ctx.lineWidth = 3.5; ctx.stroke();
+    if (skin.tailTip) {
+      // small pale cap over the last segment, e.g. a fox's white tail tip
+      ctx.strokeStyle = skin.tailTip; ctx.lineWidth = 9;
+      ctx.beginPath();
+      ctx.moveTo(pts[4][0], pts[4][1]);
+      ctx.lineTo(pts[5][0], pts[5][1]);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  function foxEar(ctx, baseX, baseY, len, w, tilt, flop, skin) {
+    // broad, pointed triangular fox ear with a pale inner-ear patch —
+    // used instead of the tall narrow rabbit-style ear() above
+    ctx.save();
+    ctx.translate(baseX, baseY); ctx.rotate(tilt + flop);
+    const tipX = Math.sin(flop * .8) * len * .15;
+    ctx.beginPath();
+    ctx.moveTo(-w / 2, 8);
+    ctx.quadraticCurveTo(-w / 2 - 4, -len * .4, tipX - 2, -len);
+    ctx.lineTo(tipX + 2, -len);
+    ctx.quadraticCurveTo(w / 2 + 4, -len * .4, w / 2, 8);
+    ctx.closePath();
+    U.ink(ctx, skin.body, 5, skin.outline);
+    // pale inner-ear triangle filling most of the ear, like the reference art
+    ctx.beginPath();
+    ctx.moveTo(-w * .3, 3);
+    ctx.quadraticCurveTo(-w * .32, -len * .42, tipX, -len * .87);
+    ctx.quadraticCurveTo(w * .32, -len * .42, w * .3, 3);
+    ctx.closePath();
+    ctx.fillStyle = skin.muzzleColor || skin.bodyHi; ctx.fill();
+    // rim light down the leading edge
+    ctx.beginPath();
+    ctx.moveTo(-w * .42, 5);
+    ctx.quadraticCurveTo(-w * .48, -len * .5, tipX - w * .16, -len * .92);
+    ctx.strokeStyle = U.rgba(skin.bodyHi, .5); ctx.lineWidth = 2.5; ctx.lineCap = 'round'; ctx.stroke();
+    ctx.restore();
+  }
+
+  function foxTail(ctx, angle, wag, skin, scaleFlip = 1) {
+    // thick, single-curve bushy tail with a broad pale tip, so it reads as
+    // fluffy rather than the thin multi-kinked line used by tail() above
+    ctx.save();
+    ctx.translate(-4 * scaleFlip, -52);
+    ctx.rotate(angle * .35 + wag * .2);
+    const pts = [
+      [0, 0],
+      [-30 * scaleFlip, -4 + wag * 6],
+      [-56 * scaleFlip, 8 + wag * 8],
+      [-60 * scaleFlip, 36 + wag * 4]
+    ];
+    ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+    ctx.strokeStyle = skin.outline; ctx.lineWidth = 27;
+    ctx.beginPath();
+    ctx.moveTo(pts[0][0], pts[0][1]);
+    ctx.quadraticCurveTo(pts[1][0], pts[1][1], (pts[1][0] + pts[2][0]) / 2, (pts[1][1] + pts[2][1]) / 2);
+    ctx.quadraticCurveTo(pts[2][0], pts[2][1], pts[3][0], pts[3][1]);
+    ctx.stroke();
+    ctx.strokeStyle = skin.body; ctx.lineWidth = 21; ctx.stroke();
+    ctx.strokeStyle = U.rgba(skin.bodyHi, .4); ctx.lineWidth = 6; ctx.stroke();
+    // broad pale tip, blended into the fluff rather than a thin cap line
+    ctx.strokeStyle = skin.tailTip || '#fff7ec'; ctx.lineWidth = 21;
+    ctx.beginPath();
+    ctx.moveTo((pts[2][0] + pts[3][0]) / 2, (pts[2][1] + pts[3][1]) / 2);
+    ctx.lineTo(pts[3][0], pts[3][1]);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function fluffTail(ctx, skin, s = 1) {
+    // small round fluffy tail (bunny-style), used instead of the long kinked tail
+    ctx.save();
+    ctx.scale(s, s);
+    for (let i = 0; i < 6; i++) {
+      const a = (i / 6) * Math.PI * 2;
+      U.ellipse(ctx, Math.cos(a) * 7, Math.sin(a) * 7, 6.5, 6.5);
+      ctx.fillStyle = U.rgba(skin.body, .95); ctx.fill();
+      ctx.strokeStyle = skin.outline; ctx.lineWidth = 1.8; ctx.stroke();
+    }
+    U.ellipse(ctx, 0, 0, 7, 7);
+    ctx.fillStyle = U.rgba(skin.bodyHi, .85); ctx.fill();
+    ctx.restore();
+  }
+
+  function shorts(ctx, skin, j) {
+    // athletic shorts positioned around the pelvis; leg holes match the thigh joints
+    ctx.save();
+    ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+
+    // thigh positions from the pose solver so the holes frame the legs;
+    // track partway toward the knees so the openings stay over the thighs
+    // even mid-stride (otherwise the leg pops out from behind the fabric)
+    const waistY = -62;
+    const hemY = -46;
+    const holeWidth = 14;
+    const halfWaist = 25;
+    const track = (hip, knee) => U.clamp(
+      hip.x + ((knee ? knee.x : hip.x) - hip.x) * .45,
+      -halfWaist + holeWidth - 2, halfWaist - holeWidth + 2
+    );
+    const leftHoleX = track(j.hipL, j.kneeL);
+    const rightHoleX = track(j.hipR, j.kneeR);
+
+    // main shorts shape with fabric bulging around the legs
+    ctx.beginPath();
+    ctx.moveTo(-halfWaist, waistY);
+    ctx.quadraticCurveTo(-halfWaist - 2, waistY + 12, -halfWaist - 1, hemY - 4);
+    ctx.quadraticCurveTo(leftHoleX - holeWidth - 2, hemY - 2, leftHoleX - holeWidth, hemY + 2); // left outer hem
+    ctx.quadraticCurveTo(leftHoleX - 2, hemY + 6, leftHoleX + 2, hemY + 2);                    // inner left
+    ctx.lineTo(0, hemY - 2);                                                                  // crotch seam
+    ctx.lineTo(rightHoleX - 2, hemY + 2);                                                     // inner right
+    ctx.quadraticCurveTo(rightHoleX + 2, hemY + 6, rightHoleX + holeWidth, hemY + 2);          // right outer hem
+    ctx.quadraticCurveTo(rightHoleX + holeWidth + 2, hemY - 2, halfWaist + 1, hemY - 4);
+    ctx.quadraticCurveTo(halfWaist + 2, waistY + 12, halfWaist, waistY);
+    ctx.closePath();
+    U.ink(ctx, skin.shorts, 5, skin.outline);
+
+    // shading + waistband clipped to the shorts shape
+    ctx.save(); ctx.clip();
+    // side shadows
+    ctx.fillStyle = U.rgba(skin.shortsLo, .55);
+    ctx.fillRect(halfWaist - 8, waistY, 10, 30);
+    ctx.fillRect(-halfWaist, waistY, 8, 30);
+    // front highlight
+    ctx.fillStyle = U.rgba('#ffffff', .16);
+    ctx.fillRect(-6, waistY, 12, 28);
+    // leg-opening underside shadows
+    ctx.fillStyle = U.rgba(skin.shortsLo, .65);
+    ctx.fillRect(leftHoleX - holeWidth, hemY, holeWidth * 2, 4);
+    ctx.fillRect(rightHoleX - holeWidth, hemY, holeWidth * 2, 4);
+    ctx.restore();
+
+    // waistband
+    ctx.beginPath();
+    ctx.moveTo(-halfWaist, waistY + 2); ctx.quadraticCurveTo(0, waistY - 2, halfWaist, waistY + 2);
+    ctx.strokeStyle = U.rgba(skin.outline, .55); ctx.lineWidth = 3.5; ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(-halfWaist, waistY + 7); ctx.quadraticCurveTo(0, waistY + 11, halfWaist, waistY + 7);
+    ctx.strokeStyle = U.rgba(skin.shortsLo, .6); ctx.lineWidth = 2.5; ctx.stroke();
+
+    // drawstring
+    ctx.beginPath();
+    ctx.arc(0, waistY + 4, 2.2, 0, Math.PI * 2);
+    ctx.fillStyle = U.rgba(skin.shortsLo, .85); ctx.fill();
+    ctx.strokeStyle = skin.outline; ctx.lineWidth = 1.5; ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(0, waistY + 6); ctx.quadraticCurveTo(-2, waistY + 12, -5, waistY + 14);
+    ctx.moveTo(0, waistY + 6); ctx.quadraticCurveTo(2, waistY + 12, 5, waistY + 14);
+    ctx.stroke();
+
+    // side stripes
+    ctx.beginPath();
+    ctx.moveTo(-halfWaist + 1, waistY); ctx.quadraticCurveTo(-halfWaist, waistY + 14, -halfWaist + 1, hemY);
+    ctx.strokeStyle = U.rgba('#ffffff', .55); ctx.lineWidth = 3.5; ctx.lineCap = 'round'; ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(halfWaist - 1, waistY); ctx.quadraticCurveTo(halfWaist, waistY + 14, halfWaist - 1, hemY);
+    ctx.strokeStyle = U.rgba('#ffffff', .55); ctx.lineWidth = 3.5; ctx.lineCap = 'round'; ctx.stroke();
+
+    ctx.restore();
+  }
+
+  function torso(ctx, j, skin) {
+    // rounded chest -> waist silhouette instead of a flat slab
+    ctx.beginPath();
+    ctx.moveTo(-13, -116);
+    ctx.quadraticCurveTo(0, -122, 13, -116);
+    ctx.quadraticCurveTo(23, -104, 23, -86);
+    ctx.quadraticCurveTo(23, -68, 20, -58);
+    ctx.lineTo(-20, -58);
+    ctx.quadraticCurveTo(-23, -68, -23, -86);
+    ctx.quadraticCurveTo(-23, -104, -13, -116);
+    ctx.closePath();
+    U.ink(ctx, skin.body, 5, skin.outline);
+
+    ctx.save(); ctx.clip();
+    // form shading
+    const g = ctx.createLinearGradient(-24, 0, 24, 0);
+    g.addColorStop(0, U.rgba(skin.bodyHi, .45));
+    g.addColorStop(.45, U.rgba(skin.body, 0));
+    g.addColorStop(1, U.rgba(skin.bodyLo, .55));
+    ctx.fillStyle = g; ctx.fillRect(-24, -122, 48, 68);
+    // lighter belly / chest patch
+    U.ellipse(ctx, -1, -82, 14, 24);
+    ctx.fillStyle = U.rgba(skin.bodyHi, .38); ctx.fill();
+    // neck shadow under the head
+    U.ellipse(ctx, 0, -116, 15, 8);
+    ctx.fillStyle = U.rgba(skin.bodyLo, .5); ctx.fill();
+    ctx.restore();
+  }
+
+  function face(ctx, j, skin, t) {
+    const r = j.head.r, turn = j.head.turn;   // turn: -1 (away) .. 1 (at camera)
+    const cx = turn * r * .16;
+
+    // head
+    U.ellipse(ctx, 0, 0, r, r * .98);
+    U.ink(ctx, skin.body, 5.5, skin.outline);
+
+    // cheek shading + rim light
+    ctx.save();
+    U.ellipse(ctx, 0, 0, r, r * .98); ctx.clip();
+    const g = ctx.createRadialGradient(-r * .35, -r * .4, r * .1, 0, 0, r * 1.2);
+    g.addColorStop(0, U.rgba(skin.bodyHi, .55));
+    g.addColorStop(.55, U.rgba(skin.body, 0));
+    g.addColorStop(1, U.rgba(skin.bodyLo, .6));
+    ctx.fillStyle = g; ctx.fillRect(-r, -r, r * 2, r * 2);
+    // soft muzzle so the face has structure
+    if (turn > -0.2) {
+      U.ellipse(ctx, turn * r * .16, r * .3, r * .42, r * .3);
+      ctx.fillStyle = U.rgba(skin.bodyHi, .32); ctx.fill();
+    }
+    ctx.restore();
+
+    if (turn < -0.2) {
+      // back of head — a couple of scruffy hair lines and that's it
+      ctx.strokeStyle = U.rgba(skin.bodyLo, .8); ctx.lineWidth = 3;
+      for (let i = -1; i <= 1; i++) {
+        ctx.beginPath();
+        ctx.arc(i * 10, -4, r * .55, Math.PI * .15, Math.PI * .55);
+        ctx.stroke();
+      }
+      return;
+    }
+
+    // muzzle patch — a cream/white marking on the lower face, opt-in per skin
+    if (skin.muzzle) {
+      ctx.save();
+      U.ellipse(ctx, 0, 0, r, r * .98); ctx.clip();
+      U.ellipse(ctx, cx, r * .34, r * .6, r * .4);
+      ctx.fillStyle = skin.muzzleColor || '#ffffff';
+      ctx.fill();
+      ctx.strokeStyle = skin.outline; ctx.lineWidth = 3.5; ctx.stroke();
+      ctx.restore();
+    }
+
+
+    const eyeGap = r * .40, eyeY = -r * .10;
+    const ex = [cx - eyeGap * (1 - Math.abs(turn) * .28), cx + eyeGap * (1 + Math.abs(turn) * .06)];
+    const eyeRX = r * .17, eyeRY = r * .30;
+
+    // brows
+    for (let i = 0; i < 2; i++) {
+      const dir = i ? 1 : -1;
+      ctx.save();
+      ctx.translate(ex[i], eyeY - eyeRY - r * .16);
+      ctx.rotate(dir * (0.28 + j.browAngry * 0.35));
+      ctx.beginPath();
+      ctx.moveTo(-r * .18, 0); ctx.quadraticCurveTo(0, -r * .12, r * .18, 0);
+      ctx.strokeStyle = skin.outline; ctx.lineWidth = 4.6; ctx.lineCap = 'round'; ctx.stroke();
+      ctx.restore();
+    }
+
+    // eyes
+    for (let i = 0; i < 2; i++) {
+      const blinkK = 1 - j.blink;
+      if (j.mouth === 'x') {
+        // dizzy X eyes on a crash
+        ctx.save(); ctx.translate(ex[i], eyeY);
+        ctx.strokeStyle = skin.outline; ctx.lineWidth = 4.5; ctx.lineCap = 'round';
+        ctx.beginPath(); ctx.moveTo(-7, -8); ctx.lineTo(7, 8); ctx.moveTo(7, -8); ctx.lineTo(-7, 8); ctx.stroke();
+        ctx.restore(); continue;
+      }
+      U.ellipse(ctx, ex[i], eyeY, eyeRX, Math.max(1.5, eyeRY * blinkK));
+      U.ink(ctx, skin.eye, 3.4, skin.outline);
+      if (blinkK > .3) {
+        // pupil, drifting slightly with the head turn
+        const px = ex[i] + turn * eyeRX * .35;
+        U.ellipse(ctx, px, eyeY + eyeRY * .12 * blinkK, eyeRX * .52, eyeRY * .5 * blinkK);
+        ctx.fillStyle = skin.pupil; ctx.fill();
+        U.ellipse(ctx, px - eyeRX * .22, eyeY - eyeRY * .22, eyeRX * .22, eyeRY * .16);
+        ctx.fillStyle = '#fff'; ctx.fill();
+      }
+    }
+
+    // nose dot
+    U.ellipse(ctx, cx, eyeY + r * .29, r * .075, r * .06);
+    ctx.fillStyle = skin.outline; ctx.fill();
+    U.ellipse(ctx, cx - r * .03, eyeY + r * .27, r * .026, r * .02);
+    ctx.fillStyle = 'rgba(255,255,255,.6)'; ctx.fill();
+
+    // cheek blush
+    if (j.mouth !== 'x') {
+      [-1, 1].forEach(s => {
+        U.ellipse(ctx, cx + s * r * .62, eyeY + r * .3, r * .13, r * .08);
+        ctx.fillStyle = 'rgba(255,120,140,.28)'; ctx.fill();
+      });
+    }
+
+    // mouth
+    ctx.save();
+    ctx.translate(cx, eyeY + r * .46);
+    ctx.strokeStyle = skin.outline; ctx.lineWidth = 4.2; ctx.lineCap = 'round';
+    ctx.fillStyle = '#3a1420';
+    switch (j.mouth) {
+      case 'open':
+        U.ellipse(ctx, 0, r * .04, r * .17, r * .15); U.ink(ctx, '#3a1420', 4, skin.outline);
+        U.ellipse(ctx, 0, r * .11, r * .1, r * .06); ctx.fillStyle = '#ff6d8a'; ctx.fill();
+        break;
+      case 'oh':
+        U.ellipse(ctx, 0, r * .02, r * .12, r * .16); U.ink(ctx, '#3a1420', 4, skin.outline);
+        break;
+      case 'grit':
+        U.roundRect(ctx, -r * .21, -r * .05, r * .42, r * .16, 3); U.ink(ctx, '#fff', 3.6, skin.outline);
+        ctx.beginPath();
+        for (let k = -2; k <= 2; k++) { ctx.moveTo(k * r * .085, -r * .05); ctx.lineTo(k * r * .085, r * .11); }
+        ctx.lineWidth = 2; ctx.stroke();
+        break;
+      case 'grin':
+        ctx.beginPath(); ctx.arc(0, -r * .04, r * .22, .18 * Math.PI, .82 * Math.PI);
+        U.ink(ctx, '#3a1420', 4, skin.outline);
+        break;
+      case 'x':
+        ctx.beginPath(); ctx.moveTo(-r * .13, r * .04); ctx.quadraticCurveTo(0, -r * .1, r * .13, r * .04); ctx.stroke();
+        break;
+      case 'determined':
+        ctx.beginPath(); ctx.moveTo(-r * .17, 0); ctx.quadraticCurveTo(0, r * .1, r * .17, -r * .02); ctx.stroke();
+        break;
+      default: // smile
+        ctx.beginPath(); ctx.arc(0, -r * .06, r * .2, .12 * Math.PI, .88 * Math.PI); ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  /* ---------------- accessories ---------------- */
+  const ACC = {
+    cap(ctx, j, skin) {
+      const r = j.head.r;
+      ctx.save(); ctx.translate(0, -r * .62);
+      ctx.beginPath(); ctx.arc(0, 0, r * .92, Math.PI, 0); ctx.closePath();
+      U.ink(ctx, '#e5262b', 4.5, '#10161f');
+      U.roundRect(ctx, -r * .2, -r * .06, r * 1.5, r * .3, 8);
+      U.ink(ctx, '#b81b20', 4, '#10161f');
+      U.ellipse(ctx, 0, -r * .9, r * .12, r * .12); U.ink(ctx, '#fff', 3, '#10161f');
+      ctx.restore();
+    },
+    shades(ctx, j, skin) {
+      const r = j.head.r;
+      ctx.save(); ctx.translate(j.head.turn * r * .16, -r * .1);
+      U.roundRect(ctx, -r * .62, -r * .22, r * .52, r * .42, 6); U.ink(ctx, '#10161f', 3, '#000');
+      U.roundRect(ctx, r * .1, -r * .22, r * .52, r * .42, 6); U.ink(ctx, '#10161f', 3, '#000');
+      ctx.beginPath(); ctx.moveTo(-r * .1, -r * .06); ctx.lineTo(r * .1, -r * .06);
+      ctx.strokeStyle = '#10161f'; ctx.lineWidth = 4; ctx.stroke();
+      ctx.fillStyle = 'rgba(255,255,255,.45)';
+      ctx.fillRect(-r * .56, -r * .18, r * .14, r * .1);
+      ctx.fillRect(r * .16, -r * .18, r * .14, r * .1);
+      ctx.restore();
+    },
+    goggles(ctx, j, skin) {
+      const r = j.head.r;
+      ctx.save(); ctx.translate(0, -r * .72);
+      U.roundRect(ctx, -r * .95, -r * .16, r * 1.9, r * .34, 10); U.ink(ctx, '#5a3a1a', 4, '#10161f');
+      U.ellipse(ctx, -r * .38, 0, r * .26, r * .22); U.ink(ctx, '#9fe8ff', 4, '#10161f');
+      U.ellipse(ctx, r * .38, 0, r * .26, r * .22); U.ink(ctx, '#9fe8ff', 4, '#10161f');
+      ctx.restore();
+    },
+    headphones(ctx, j, skin) {
+      const r = j.head.r;
+      ctx.save();
+      ctx.beginPath(); ctx.arc(0, -r * .1, r * 1.02, Math.PI * 1.08, Math.PI * 1.92);
+      ctx.strokeStyle = '#10161f'; ctx.lineWidth = 11; ctx.stroke();
+      ctx.strokeStyle = '#ffb020'; ctx.lineWidth = 6; ctx.stroke();
+      [-1, 1].forEach(s => {
+        U.roundRect(ctx, s * r * .92 - (s > 0 ? 0 : r * .3), -r * .28, r * .3, r * .5, 6);
+        U.ink(ctx, '#ffb020', 4, '#10161f');
+      });
+      ctx.restore();
+    },
+    crown(ctx, j, skin) {
+      const r = j.head.r;
+      ctx.save(); ctx.translate(0, -r * .84);
+      U.poly(ctx, [[-r * .5, 0], [-r * .5, -r * .34], [-r * .22, -r * .12], [0, -r * .46],
+      [r * .22, -r * .12], [r * .5, -r * .34], [r * .5, 0]]);
+      U.ink(ctx, '#ffd94a', 4, '#7a5200');
+      [-r * .32, 0, r * .32].forEach(x => { U.ellipse(ctx, x, -r * .04, 3.5, 3.5); U.ink(ctx, '#ff4d6d', 2, '#7a5200'); });
+      ctx.restore();
+    },
+    whistle(ctx, j, skin) {
+      ctx.save();
+      ctx.beginPath(); ctx.moveTo(-16, -110); ctx.quadraticCurveTo(0, -86, 14, -108);
+      ctx.strokeStyle = '#10161f'; ctx.lineWidth = 4; ctx.stroke();
+      U.roundRect(ctx, -4, -92, 14, 9, 3); U.ink(ctx, '#c0c6d1', 3, '#10161f');
+      ctx.restore();
+    },
+    scarf(ctx, j, skin, t) {
+      ctx.save();
+      U.roundRect(ctx, -22, -118, 44, 15, 7); U.ink(ctx, '#2f6fd0', 4, '#10161f');
+      const w = Math.sin(t * 7) * 12;
+      U.poly(ctx, [[8, -114], [30 + w * .4, -104 + w * .3], [48 + w, -88 + w], [40 + w, -78 + w], [22, -96], [8, -102]]);
+      U.ink(ctx, '#2f6fd0', 4, '#10161f');
+      ctx.restore();
+    },
+    cape(ctx, j, skin, t) {
+      ctx.save();
+      const w = Math.sin(t * 6) * 10;
+      U.poly(ctx, [[-16, -116], [16, -116], [34 + w * .5, -60], [44 + w, -18], [10, -34], [-18, -30], [-34 - w * .4, -58]]);
+      U.ink(ctx, U.rgba(skin.glow || '#6b21f5', .92), 4.5, '#10161f');
+      ctx.restore();
+    },
+    mohawk(ctx, j, skin) {
+      const r = j.head.r;
+      ctx.save();
+      for (let i = -2; i <= 2; i++) {
+        const h = r * (.5 - Math.abs(i) * .08);
+        U.poly(ctx, [[i * 9 - 5, -r * .74], [i * 9, -r * .74 - h], [i * 9 + 5, -r * .74]]);
+        U.ink(ctx, i % 2 ? '#ff2f86' : '#ff8ec4', 3.5, '#0b0c10');
+      }
+      ctx.restore();
+    },
+    collar(ctx, j, skin) {
+      const r = j.head.r;
+      ctx.save(); ctx.translate(0, r * .82);
+      U.roundRect(ctx, -r * .62, -r * .12, r * 1.24, r * .26, 5);
+      U.ink(ctx, '#2a1b16', 3.5, '#0b0c10');
+      for (let i = -2; i <= 2; i++) {
+        U.poly(ctx, [[i * r * .24 - 4, r * .12], [i * r * .24, r * .3], [i * r * .24 + 4, r * .12]]);
+        U.ink(ctx, '#d8dbe4', 0);
+      }
+      ctx.restore();
+    },
+    helmet(ctx, j, skin, t) {
+      const r = j.head.r;
+      ctx.save();
+      ctx.beginPath(); ctx.arc(0, -r * .12, r * 1.16, 0, 7);
+      ctx.fillStyle = 'rgba(190,235,255,.22)'; ctx.fill();
+      ctx.strokeStyle = '#cfe3f5'; ctx.lineWidth = 5; ctx.stroke();
+      ctx.strokeStyle = 'rgba(255,255,255,.7)'; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.arc(-r * .34, -r * .3, r * .58, Math.PI * 1.05, Math.PI * 1.5); ctx.stroke();
+      U.roundRect(ctx, -r * .5, r * .82, r, r * .3, 6); U.ink(ctx, '#b9c6d8', 4, '#1d2a44');
+      ctx.restore();
+    },
+    eyelashes(ctx, j, skin) {
+      // fanned lash tufts above the outer corner of each eye
+      const r = j.head.r, turn = j.head.turn;
+      if (turn < -0.2) return;
+      const cx = turn * r * .16;
+      const eyeGap = r * .40, eyeY = -r * .10;
+      const ex = [cx - eyeGap * (1 - Math.abs(turn) * .28), cx + eyeGap * (1 + Math.abs(turn) * .06)];
+      const eyeRY = r * .30;
+      ctx.strokeStyle = skin.outline; ctx.lineWidth = 2.6; ctx.lineCap = 'round';
+      ex.forEach((x, i) => {
+        const dir = i ? 1 : -1;
+        for (let k = -1; k <= 1; k++) {
+          ctx.beginPath();
+          ctx.moveTo(x + dir * r * .06, eyeY - eyeRY * .78);
+          ctx.lineTo(x + dir * (r * .16 + k * r * .05), eyeY - eyeRY * (1.25 + k * .18));
+          ctx.stroke();
+        }
+      });
+    },
+    dress(ctx, j, skin) {
+      // sleeveless A-line dress, drawn where shorts would normally go
+      ctx.save();
+      ctx.lineJoin = 'round';
+      const top = Math.min(j.shL.y, j.shR.y) + 4;
+      const hem = -30;
+      const topHalf = 22, hemHalf = 34;
+      ctx.beginPath();
+      ctx.moveTo(-topHalf, top);
+      ctx.quadraticCurveTo(-topHalf - 6, (top + hem) / 2, -hemHalf, hem);
+      ctx.quadraticCurveTo(0, hem + 6, hemHalf, hem);
+      ctx.quadraticCurveTo(topHalf + 6, (top + hem) / 2, topHalf, top);
+      ctx.quadraticCurveTo(0, top + 9, -topHalf, top);   // scoop neckline dips down toward the chest
+      ctx.closePath();
+      U.ink(ctx, skin.shorts, 5, skin.outline);
+      ctx.save(); ctx.clip();
+      ctx.fillStyle = 'rgba(255,255,255,.14)';
+      ctx.fillRect(-topHalf, top, 12, hem - top);
+      ctx.fillStyle = U.rgba(skin.shortsLo, .5);
+      ctx.fillRect(hemHalf - 16, top, 16, hem - top);
+      ctx.restore();
+      // thin shoulder straps anchoring the dress to each shoulder
+      [-1, 1].forEach(s => {
+        U.roundRect(ctx, s * (topHalf - 5) - 4, top - 15, 8, 17, 3);
+        U.ink(ctx, skin.shorts, 3.6, skin.outline);
+      });
+      // scoop neckline trim
+      ctx.beginPath();
+      ctx.moveTo(-topHalf + 2, top + 1); ctx.quadraticCurveTo(0, top + 10, topHalf - 2, top + 1);
+      ctx.strokeStyle = U.rgba(skin.outline, .7); ctx.lineWidth = 3.6; ctx.stroke();
+      // bust contour
+      const bustY = top + (hem - top) * .3;
+      ctx.beginPath();
+      ctx.moveTo(-topHalf * .5, bustY); ctx.quadraticCurveTo(0, bustY + 7, topHalf * .5, bustY);
+      ctx.strokeStyle = U.rgba(skin.outline, .55); ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.stroke();
+      ctx.restore();
+    },
+    'ranger-hat'(ctx, j, skin) {
+      const r = j.head.r;
+      ctx.save(); ctx.translate(0, -r * .52);
+      U.ellipse(ctx, 0, r * .12, r * 1.32, r * .3); U.ink(ctx, '#8a6231', 4.5, '#2a1c0c');
+      U.roundRect(ctx, -r * .52, -r * .58, r * 1.04, r * .7, 12); U.ink(ctx, '#a3743c', 4.5, '#2a1c0c');
+      ctx.fillStyle = 'rgba(60,40,18,.55)'; ctx.fillRect(-r * .52, -r * .1, r * 1.04, r * .16);
+      ctx.restore();
+    },
+    backpack(ctx, j, skin, t) {
+      ctx.save();
+      U.roundRect(ctx, -34, -112, 26, 48, 8); U.ink(ctx, skin.pack || '#5f7d3a', 4.5, skin.packOutline || '#12210f');
+      U.roundRect(ctx, -31, -100, 20, 14, 4); U.ink(ctx, skin.packLo || '#3f5a22', 3.5, skin.packOutline || '#12210f');
+      ctx.restore();
+    },
+    hoodCollar(ctx, j, skin, t) {
+      // a hoodie collar ring at the neckline with two dangling drawstring cords
+      ctx.save();
+      const col = skin.sleeveColor || '#2f6fd0', colLo = skin.sleeveColorLo || '#184a9c';
+      U.roundRect(ctx, -23, -112, 46, 16, 8); U.ink(ctx, col, 4.5, skin.outline);
+      ctx.fillStyle = U.rgba(colLo, .5); ctx.fillRect(-23, -100, 46, 5);
+      ctx.strokeStyle = skin.outline; ctx.lineWidth = 3; ctx.lineCap = 'round';
+      [-5, 5].forEach(dx => {
+        const sway = Math.sin(t * 5 + dx) * 2;
+        ctx.beginPath();
+        ctx.moveTo(dx, -96);
+        ctx.quadraticCurveTo(dx + sway, -86, dx + sway * .6, -76);
+        ctx.stroke();
+      });
+      ctx.restore();
+    },
+  };
+  // accessories drawn *behind* the body
+  const BACK_ACC = new Set(['cape', 'backpack']);
+  // accessories drawn on the torso, not in the head group
+  const TORSO_ACC = new Set(['dress', 'hoodCollar']);
+
+  /* ---------------------------------------------------------
+     MAIN DRAW
+     --------------------------------------------------------- */
+  function drawRiggy(ctx, opts) {
+    const {
+      x = 0, y = 0, scale = 1, skinId = 'classic', state = 'idle',
+      t = 0, phase = 0, extra = {}, flip = 1, alpha = 1, shadow = true,
+      view = 'front'
+    } = opts;
+    const skin = SKINS[skinId] || SKINS.classic;
+    const j = solve(state, t, phase, Object.assign({ turn: view === 'back' ? 0.45 : 1 }, extra), skinId);
+
+    ctx.save();
+    ctx.globalAlpha *= alpha;
+    ctx.translate(x, y);
+    ctx.scale(scale * flip, scale);
+
+    // ground shadow
+    if (shadow) {
+      const sh = extra.shadowScale === undefined ? 1 : extra.shadowScale;
+      ctx.save();
+      const sg = ctx.createRadialGradient(0, 2, 2, 0, 2, 48 * sh);
+      sg.addColorStop(0, `rgba(0,0,0,${.34 * sh})`);
+      sg.addColorStop(.6, `rgba(0,0,0,${.18 * sh})`);
+      sg.addColorStop(1, 'rgba(0,0,0,0)');
+      U.ellipse(ctx, 0, 2, 48 * sh, 14 * sh);
+      ctx.fillStyle = sg; ctx.fill();
+      ctx.restore();
+    }
+
+    if (skinId === 'neegy' && neegyReady()) {
+      drawNeegy(ctx, state, t, phase, extra);
+      ctx.restore();
+      return;
+    }
+
+    ctx.translate(j.root.x, j.root.y);
+    if (j.rot) { ctx.translate(0, -60); ctx.rotate(j.rot); ctx.translate(0, 60); }
+    ctx.rotate(-j.lean * .5);
+    ctx.scale(1 / (j.stretch || 1), (j.stretch || 1) * (j.squash || 1));
+
+    // aura / glow for special skins
+    if (skin.glow) {
+      ctx.save();
+      const g = ctx.createRadialGradient(0, -100, 8, 0, -100, 130);
+      g.addColorStop(0, U.rgba(skin.glow, .35)); g.addColorStop(1, U.rgba(skin.glow, 0));
+      ctx.fillStyle = g; ctx.fillRect(-140, -240, 280, 260);
+      ctx.restore();
+    }
+
+    // --- behind-the-body layer
+    if (skin.bushyTail) {
+      foxTail(ctx, j.tail, j.tailWag, skin, 1);
+    } else if (skin.roundTail) {
+      ctx.save(); ctx.translate(-30, -44); fluffTail(ctx, skin); ctx.restore();
+    } else if (!skin.flatTail) {
+      tail(ctx, j.tail, j.tailWag, skin, 1);
+    }
+    skin.accessories.filter(a => BACK_ACC.has(a)).forEach(a => ACC[a] && ACC[a](ctx, j, skin, t));
+
+    // far limbs (right side reads as "far" from our 3/4 view)
+    limb(ctx, j.hipR, j.footR, j.kneeR, 15, skin);
+    if (skin.pants) limb(ctx, j.hipR, j.footR, j.kneeR, 18, { body: skin.pantsColor, bodyLo: skin.pantsColorLo, bodyHi: skin.pantsColorHi, outline: skin.outline });
+    shoe(ctx, j.footR, skin, 1, (j.footR.y < -12 ? -.35 : 0));
+    limb(ctx, j.shR, j.handR, j.elbR, 11, skin);
+    if (skin.sleeves) limb(ctx, j.shR, j.handR, j.elbR, 14, { body: skin.sleeveColor, bodyLo: skin.sleeveColorLo, bodyHi: skin.sleeveColorHi, outline: skin.outline });
+    glove(ctx, j.handR, 11, skin);
+
+    // near leg — drawn before shorts so the shorts cover the upper thigh
+    limb(ctx, j.hipL, j.footL, j.kneeL, 16, skin);
+    if (skin.pants) limb(ctx, j.hipL, j.footL, j.kneeL, 19, { body: skin.pantsColor, bodyLo: skin.pantsColorLo, bodyHi: skin.pantsColorHi, outline: skin.outline });
+    shoe(ctx, j.footL, skin, 1, (j.footL.y < -12 ? -.35 : 0));
+
+    // body
+    torso(ctx, j, skin);
+    skin.accessories.filter(a => TORSO_ACC.has(a)).forEach(a => ACC[a] && ACC[a](ctx, j, skin, t));
+    if (!skin.noShorts) shorts(ctx, skin, j);
+
+    // near arm — in front of the torso
+    limb(ctx, j.shL, j.handL, j.elbL, 12, skin);
+    if (skin.sleeves) limb(ctx, j.shL, j.handL, j.elbL, 15, { body: skin.sleeveColor, bodyLo: skin.sleeveColorLo, bodyHi: skin.sleeveColorHi, outline: skin.outline });
+    glove(ctx, j.handL, 11.5, skin);
+
+    // head group
+    ctx.save();
+    ctx.translate(j.head.x, j.head.y);
+    ctx.rotate(j.head.tilt);
+    if (skin.roundEars) {
+      [-1, 1].forEach(s => {
+        U.ellipse(ctx, s * j.head.r * .82, -j.head.r * .5, 13, 14);
+        U.ink(ctx, skin.body, 5, skin.outline);
+        U.ellipse(ctx, s * j.head.r * .82, -j.head.r * .5, 6, 7);
+        ctx.fillStyle = U.rgba(skin.bodyLo, .7); ctx.fill();
+      });
+    } else if (skin.foxEars) {
+      foxEar(ctx, -16, -j.head.r * .8, 54, 36, j.ear.l, j.ear.flop, skin);
+      foxEar(ctx, 17, -j.head.r * .8, 58, 38, j.ear.r, j.ear.flop * .86, skin);
+    } else {
+      ear(ctx, -14, -j.head.r * .78, 62, 15, j.ear.l, j.ear.flop, skin);
+      ear(ctx, 15, -j.head.r * .78, 66, 15, j.ear.r, j.ear.flop * .86, skin);
+    }
+    face(ctx, j, skin, t);
+    skin.accessories.filter(a => !BACK_ACC.has(a) && !TORSO_ACC.has(a)).forEach(a => ACC[a] && ACC[a](ctx, j, skin, t));
+    ctx.restore();
+
+    // front-of-body accessories that live on the torso
+    if (skin.accessories.includes('whistle')) ACC.whistle(ctx, j, skin, t);
+    if (skin.accessories.includes('scarf')) ACC.scarf(ctx, j, skin, t);
+
+    // skin FX
+    if (skin.sparkle) {
+      for (let i = 0; i < 5; i++) {
+        const a = t * 2 + i * 1.4;
+        const sx = Math.cos(a) * 62, sy = -110 + Math.sin(a * 1.3) * 62;
+        const s2 = 3 + Math.sin(a * 3) * 2;
+        U.star(ctx, sx, sy, 4, s2 + 3, s2 * .4);
+        ctx.fillStyle = 'rgba(255,245,190,.9)'; ctx.fill();
+      }
+    }
+    if (skin.flames) {
+      for (let i = 0; i < 6; i++) {
+        const a = t * 4 + i;
+        const fx = -20 + (i % 3) * 20, fy = -20 - ((a * 40) % 90);
+        U.ellipse(ctx, fx + Math.sin(a * 3) * 5, fy, 6, 11);
+        ctx.fillStyle = U.rgba(i % 2 ? '#ffb26b' : '#ff5a1f', .5); ctx.fill();
+      }
+    }
+    if (skin.frosty) {
+      for (let i = 0; i < 7; i++) {
+        const a = t * 1.6 + i * .9;
+        U.ellipse(ctx, Math.sin(a) * 55, -30 - ((a * 26) % 150), 2.6, 2.6);
+        ctx.fillStyle = 'rgba(230,250,255,.85)'; ctx.fill();
+      }
+    }
+    if (skin.ghostly) {
+      for (let i = 0; i < 4; i++) {
+        const a = t * 2.2 + i * 1.6;
+        const gy = -20 - ((a * 34) % 130);
+        ctx.globalAlpha = .35;
+        U.ellipse(ctx, Math.sin(a * .8) * 30, gy, 16 - i * 2, 7);
+        ctx.fillStyle = U.rgba(skin.glow, .6); ctx.fill();
+        ctx.globalAlpha = 1;
+      }
+    }
+
+    ctx.restore();
+  }
+
+  /* small silhouette used by the character cards */
+  function drawBust(ctx, cx, cy, r, skinId, t = 0) {
+    if (skinId === 'neegy' && neegyReady()) {
+      const srcH = NEEGY_IMG.naturalWidth * 1.03;           // top slice of the sprite: head + shoulders
+      const h = r * 3.3, w = h * NEEGY_IMG.naturalWidth / srcH;
+      ctx.drawImage(NEEGY_IMG, 0, 0, NEEGY_IMG.naturalWidth, srcH, cx - w / 2, cy - r * 2.1, w, h);
+      return;
+    }
+    const skin = SKINS[skinId] || SKINS.classic;
+    const j = solve('idle', t, 0, { turn: 1 }, skinId);
+    ctx.save(); ctx.translate(cx, cy); ctx.scale(r / 42, r / 42);
+    if (skin.bushyTail) {
+      foxTail(ctx, -0.6, Math.sin(t) * .3, skin, 1);
+    } else if (skin.roundTail) {
+      ctx.save(); ctx.translate(-26, 30); fluffTail(ctx, skin, .8); ctx.restore();
+    } else if (skin.flatTail) {
+      ctx.save(); ctx.translate(-30, 26); ctx.rotate(-.5);
+      U.roundRect(ctx, -34, -13, 40, 28, 12); U.ink(ctx, '#6b4423', 4.5, skin.outline);
+      ctx.restore();
+    } else {
+      tail(ctx, -0.6, Math.sin(t) * .3, skin, 1);
+    }
+    if (skin.roundEars) {
+      [-1, 1].forEach(s => {
+        U.ellipse(ctx, s * j.head.r * .82, -j.head.r * .5, 13, 14);
+        U.ink(ctx, skin.body, 5, skin.outline);
+      });
+    } else if (skin.foxEars) {
+      foxEar(ctx, -16, -j.head.r * .8, 54, 36, -.18 + Math.sin(t) * .05, 0, skin);
+      foxEar(ctx, 17, -j.head.r * .8, 58, 38, .18 + Math.sin(t) * .05, 0, skin);
+    } else {
+      ear(ctx, -14, -j.head.r * .78, 62, 15, -.18 + Math.sin(t) * .05, 0, skin);
+      ear(ctx, 15, -j.head.r * .78, 66, 15, .18 + Math.sin(t) * .05, 0, skin);
+    }
+    face(ctx, j, skin, t);
+    skin.accessories.filter(a => !BACK_ACC.has(a) && !TORSO_ACC.has(a)).forEach(a => ACC[a] && ACC[a](ctx, j, skin, t));
+    ctx.restore();
+  }
+
+  return { draw: drawRiggy, drawBust, SKINS, solve };
+})();
