@@ -910,7 +910,7 @@ const Game = (() => {
       S.vy -= GRAV * dt; S.y = Math.max(0, S.y + S.vy * dt); if (S.y === 0) S.vy = 0;
       if (S.flash > 0) S.flash = Math.max(0, S.flash - dt * 2);
       if (Math.random() < dt * 40) sparkle(U.rand(260, -260), U.rand(380, 120), S.z + U.rand(500, 150),
-        U.pick(['rgba(255,214,80,.95)', 'rgba(255,110,160,.95)', 'rgba(110,220,255,.95)', 'rgba(140,255,150,.95)']));
+        U.pick(['rgba(110,220,255,.95)', 'rgba(140,255,150,.95)', 'rgba(185,140,255,.95)', 'rgba(255,255,255,.95)']));
       updateParticles(dt); camFollow(dt);
       return;
     }

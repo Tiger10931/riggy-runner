@@ -199,10 +199,7 @@ const World = (() => {
       snowCap: !!(base.snowCap || (S.snowCap && !base.indoor)),
       sunScale: S.sunScale
     });
-    if (S.weather && !base.indoor) {
-      if (!base.weather || S.force) out.weather = S.weather;
-      else out.weather2 = S.weather;           // map keeps its own weather, season adds falling leaves / petals on top
-    }
+    /* seasonal falling leaves / petals / snow removed: they read as distracting confetti during play */
     _biomeCache.set(key, out);
     return out;
   }
