@@ -11,6 +11,8 @@ const UI = (() => {
   const el = {
     hud: $('#hud'), menu: $('#menu'), characters: $('#characters'), shop: $('#shop'),
     missions: $('#missions'), how: $('#how'), settings: $('#settings'),
+    levels: $('#levels'), levelcomplete: $('#levelcomplete'),
+    levelHud: $('#levelHud'), hlName: $('#hlName'), hlSeason: $('#hlSeason'), hlFill: $('#hlFill'),
     pause: $('#pause'), gameover: $('#gameover'), countdown: $('#countdown'),
     score: $('#scoreValue'), dist: $('#distValue'), speed: $('#speedValue'),
     coins: $('#coinCount'), multiChip: $('#multiChip'), multi: $('#multiValue'),
@@ -25,10 +27,10 @@ const UI = (() => {
 
   /* ---------------- screen switching ---------------- */
   function show(name) {
-    ['menu', 'characters', 'shop', 'missions', 'how', 'settings', 'pause', 'gameover'].forEach(k => el[k].classList.add('hidden'));
+    ['menu', 'characters', 'shop', 'missions', 'how', 'settings', 'levels', 'pause', 'gameover', 'levelcomplete'].forEach(k => el[k].classList.add('hidden'));
     if (name) el[name].classList.remove('hidden');
   }
-  function hideAllSheets() { ['characters', 'shop', 'missions', 'how', 'settings'].forEach(k => el[k].classList.add('hidden')); }
+  function hideAllSheets() { ['characters', 'shop', 'missions', 'how', 'settings', 'levels'].forEach(k => el[k].classList.add('hidden')); }
 
   function toast(msg, kind = '') {
     const d = document.createElement('div');
@@ -53,6 +55,7 @@ const UI = (() => {
     const m = state.multiplier;
     if (m > 1) { el.multiChip.classList.remove('hidden'); el.multi.textContent = m.toFixed(m % 1 ? 1 : 0); }
     else el.multiChip.classList.add('hidden');
+    if (state.levelPct >= 0) el.hlFill.style.width = (state.levelPct * 100).toFixed(1) + '%';
     el.hbCount.textContent = state.boards;
     el.hoverBtn.classList.toggle('empty', state.boards <= 0 || state.onBoard);
   }
@@ -102,7 +105,87 @@ const UI = (() => {
     $('#totalRuns').textContent = U.fmt(d.runs);
     $('#bestDist').textContent = U.fmt(d.bestDist);
     $$('.wallet').forEach(n => n.textContent = U.fmt(d.coins));
+    const lvl = Levels.current(d.mode);
+    $('#playBtn').textContent = Levels.unlocked(d.mode) >= Levels.COUNT && Levels.starsFor(d.mode, Levels.COUNT) > 0 ? 'PLAY · LEVEL ' + Levels.COUNT : 'PLAY · LEVEL ' + lvl;
+    paintSeason();
     if (typeof Rhythm !== 'undefined') Rhythm.refreshButton();
+  }
+
+  /* ---------------- seasons ---------------- */
+  function paintSeason() {
+    const sn = World.currentSeason(Save.d.opts.season);
+    const chip = $('#seasonChip');
+    if (chip) { chip.textContent = sn.name; chip.style.setProperty('--sc', sn.color); }
+    document.documentElement.style.setProperty('--sc', sn.color);
+    const so = $('#optSeason');
+    if (so) so.textContent = Save.d.opts.season === 'auto' ? 'AUTO · ' + sn.name : sn.name;
+    if (el.hlSeason) el.hlSeason.textContent = sn.name;
+  }
+
+  /* ---------------- in-run level bar ---------------- */
+  function setLevelHud(info) {
+    if (!info) { el.levelHud.classList.add('hidden'); return; }
+    el.levelHud.classList.remove('hidden');
+    el.hlName.textContent = `LEVEL ${info.n} · ${info.name.toUpperCase()}`;
+    el.hlSeason.textContent = info.season.name;
+    el.hlFill.style.width = '0%';
+  }
+
+  /* ---------------- level select ---------------- */
+  const starStr = n => '&#9733;'.repeat(n) + '<span class="off">' + '&#9733;'.repeat(3 - n) + '</span>';
+  function buildLevels() {
+    const mode = Save.d.mode;
+    $$('#lvModeRow .mode-btn').forEach(btn => {
+      const m = MODES[btn.dataset.mode];
+      btn.style.setProperty('--mc', m.color);
+      btn.classList.toggle('active', mode === m.id);
+      btn.onclick = () => {
+        if (Save.d.mode !== m.id) { Save.d.mode = m.id; Save.save(); Sound.sfx.button(); }
+        buildModes(); buildLevels(); refreshStats();
+      };
+    });
+    const unl = Levels.unlocked(mode), sn = World.currentSeason(Save.d.opts.season);
+    $('#lvSummary').innerHTML = `<b>${Levels.totalStars(mode)}</b> / ${Levels.COUNT * 3} stars &nbsp;·&nbsp; level <b>${unl}</b> / ${Levels.COUNT} &nbsp;·&nbsp; season <b style="color:${sn.color}">${sn.name}</b>`;
+    const grid = $('#levelGrid');
+    grid.innerHTML = '';
+    for (let n = 1; n <= Levels.COUNT; n++) {
+      const locked = n > unl;
+      const idx = Levels.mapIndex(n, mode);
+      const B = World.resolveBiome(idx, sn.id, n);
+      const st = Levels.starsFor(mode, n);
+      const tile = document.createElement('button');
+      tile.className = 'lv-tile' + (locked ? ' locked' : '') + (n === unl ? ' current' : '');
+      tile.style.setProperty('--lc1', B.sky[0] === B.sky[1] ? B.ground : B.sky[1]);
+      tile.style.setProperty('--lc2', B.dark ? B.sky[2] : B.ground);
+      tile.innerHTML = `<div class="lv-num">${n}</div><div class="lv-map">${B.name}</div>
+        <div class="lv-stars">${starStr(st)}</div>${locked ? '<div class="lv-lock">&#128274;</div>' : ''}`;
+      tile.onclick = () => {
+        if (locked) { Sound.sfx.deny(); toast(`Beat level ${unl} first`, 'bad'); return; }
+        Sound.resume(); Sound.sfx.button(); Game.playLevel(n);
+      };
+      grid.appendChild(tile);
+    }
+    /* scroll the current level into view */
+    const cur = grid.querySelector('.current');
+    if (cur) setTimeout(() => cur.scrollIntoView({ block: 'center' }), 0);
+  }
+
+  /* ---------------- level complete ---------------- */
+  function levelComplete(r) {
+    const rm = MODES[r.mode] || MODES.normal;
+    $('#lcRibbon').textContent = r.allDone ? 'ALL 50 LEVELS CLEARED!' : `LEVEL ${r.level} COMPLETE`;
+    $('#lcStars').innerHTML = starStr(r.stars);
+    $('#lcSub').textContent = `${rm.name} · ${r.map} · ${r.season.name}` + (r.hasNext ? ` — next up: ${r.nextMap}` : '');
+    $('#lcCoins').textContent = U.fmt(r.coins);
+    $('#lcScore').textContent = U.fmt(r.score);
+    $('#lcMap').textContent = r.map;
+    $('#lcGoals').innerHTML =
+      `<div class="ok"><span>&#9733; Reach the finish</span><b>&#10004;</b></div>` +
+      `<div class="${r.gotCoins ? 'ok' : 'no'}"><span>&#9733;&#9733; Grab ${r.coinGoal} coins</span><b>${r.gotCoins ? '&#10004;' : r.coinPicks + ' / ' + r.coinGoal}</b></div>` +
+      `<div class="${r.clean ? 'ok' : 'no'}"><span>&#9733;&#9733;&#9733; No hits, no second chance</span><b>${r.clean ? '&#10004;' : '&#10008;'}</b></div>`;
+    $('#lcBonus').textContent = `+${U.fmt(r.bonus)} bonus coins` + (r.first ? '' : ' (replay)');
+    $('#lcNextBtn').classList.toggle('hidden', !r.hasNext);
+    show('levelcomplete');
   }
 
   /* ---------------- difficulty selector ---------------- */
@@ -189,10 +272,19 @@ const UI = (() => {
     if (e.ctrlKey || e.metaKey || e.altKey || e.key.length !== 1) return;
     const tag = e.target && e.target.tagName;
     if (tag === 'TEXTAREA' || (tag === 'INPUT' && e.target.type === 'text')) return;
-    typedBuf = (typedBuf + e.key.toLowerCase()).slice(-5);
-    if (typedBuf === 'neegy') {
+    typedBuf = (typedBuf + e.key.toLowerCase()).slice(-20);
+    if (typedBuf.endsWith('neegy')) {
       typedBuf = '';
       revealSecret('neegy', 'SECRET FOUND — Neegy is now in CHARACTERS for 20,000 coins!');
+    } else if (typedBuf.endsWith('unlockalllevels')) {
+      typedBuf = '';
+      /* cheat: every level on every difficulty (stars are kept as they are) */
+      MODE_ORDER.forEach(m => { Save.d.levels[m].unlocked = Levels.COUNT; });
+      Save.save();
+      Sound.sfx.buy();
+      toast('CHEAT UNLOCKED — all 50 levels on every difficulty!', 'gold');
+      refreshStats();
+      if (!el.levels.classList.contains('hidden')) buildLevels();
     }
   });
 
@@ -330,9 +422,17 @@ const UI = (() => {
       };
     });
     el.fps.classList.toggle('hidden', !o.fps);
+    const sb = $('#optSeason');
+    sb.onclick = () => {
+      const order = ['auto', ...World.SEASON_ORDER];
+      o.season = order[(order.indexOf(o.season) + 1) % order.length];
+      Save.save(); Sound.sfx.button(); paintSeason();
+      toast(o.season === 'auto' ? 'Season follows the calendar' : 'Season: ' + World.SEASONS[o.season].name, 'gold');
+    };
+    paintSeason();
     $('#resetBtn').onclick = () => {
       if (confirm('Wipe every coin, unlock and high score?')) {
-        Save.reset(); refreshStats(); buildModes(); buildCharacters(); buildShop(); buildMissions(); bindSettings();
+        Save.reset(); refreshStats(); buildModes(); buildLevels(); buildCharacters(); buildShop(); buildMissions(); bindSettings();
         toast('Progress reset', 'bad');
       }
     };
@@ -350,8 +450,12 @@ const UI = (() => {
     $('#goTricks').textContent = res.tricks;
     $('#goBiome').textContent = res.biome;
     const rib = $('#goRibbon');
-    rib.textContent = res.record ? 'NEW RECORD!' : 'RUN OVER';
-    rib.classList.toggle('record', !!res.record);
+    rib.textContent = res.level ? `LEVEL ${res.level} FAILED` : (res.record ? 'NEW RECORD!' : 'RUN OVER');
+    rib.classList.toggle('record', !res.level && !!res.record);
+    if (res.level) {
+      $('#goBest').textContent = `${rm.name} · ${res.levelPct}% of the way to the finish`;
+      $('#goBoard').style.display = 'none';
+    } else $('#goBoard').style.display = '';
 
 
     /* second chance button */
@@ -433,7 +537,9 @@ const UI = (() => {
   function bindButtons(Game) {
     const nav = (btn, fn) => { btn.onclick = () => { Sound.resume(); Sound.sfx.button(); fn(); }; };
 
-    nav($('#playBtn'), () => Game.start());
+    nav($('#playBtn'), () => Game.play());
+    nav($('#levelsBtn'), () => { buildLevels(); el.levels.classList.remove('hidden'); refreshStats(); });
+    nav($('#endlessBtn'), () => Game.playEndless());
     nav($('#charBtn'), () => { buildCharacters(); el.characters.classList.remove('hidden'); refreshStats(); });
     nav($('#shopBtn'), () => { buildShop(); el.shop.classList.remove('hidden'); refreshStats(); });
     nav($('#missionsBtn'), () => { buildMissions(); el.missions.classList.remove('hidden'); refreshStats(); });
@@ -450,6 +556,10 @@ const UI = (() => {
     nav($('#againBtn'), () => Game.start());
     nav($('#reviveBtn'), () => { if (Game.revive()) el.gameover.classList.add('hidden'); });
     nav($('#goMenuBtn'), () => Game.toMenu());
+    nav($('#lcNextBtn'), () => Game.playLevel(Game.run.level + 1));
+    nav($('#lcReplayBtn'), () => Game.start());
+    nav($('#lcLevelsBtn'), () => { Game.toMenu(); buildLevels(); el.levels.classList.remove('hidden'); refreshStats(); });
+    nav($('#lcMenuBtn'), () => Game.toMenu());
     nav($('#goShopBtn'), () => { buildShop(); el.gameover.classList.add('hidden'); Game.toMenu(); el.shop.classList.remove('hidden'); refreshStats(); });
 
     el.hoverBtn.onclick = () => Game.deployBoard();
@@ -458,7 +568,7 @@ const UI = (() => {
   return {
     el, show, hideAllSheets, toast, hud, powerups, combo, missionToast,
     refreshStats, buildModes, buildCharacters, buildShop, buildMissions, bindSettings,
-    gameOver, countdown, animateMascots, bindButtons,
+    gameOver, countdown, animateMascots, bindButtons, setLevelHud, levelComplete, buildLevels, paintSeason,
     get previewChar() { return previewChar; }
   };
 })();

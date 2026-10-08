@@ -37,6 +37,11 @@
       </div>
     </div>
 
+    <div class="hud-level hidden" id="levelHud">
+      <div class="hl-top"><span class="hl-name" id="hlName">LEVEL 1</span><span class="hl-season" id="hlSeason">AUTUMN</span></div>
+      <div class="hl-bar"><i id="hlFill"></i><b class="hl-flag">&#127937;</b></div>
+    </div>
+
     <div class="hud-powerups" id="powerupBar"></div>
 
     <div class="hud-mission" id="missionToast"></div>
@@ -60,6 +65,7 @@
   <!-- ================= MAIN MENU ================= -->
   <div id="menu" class="layer">
     <div class="menu-sky"></div>
+    <div class="season-chip" id="seasonChip">AUTUMN</div>
     <div class="logo-wrap">
       <h1 class="logo">
         <span class="logo-riggy">RIGGY</span>
@@ -91,6 +97,10 @@
         <div class="mode-desc" id="modeDesc"></div>
       </div>
       <button class="big-btn play" id="playBtn">PLAY</button>
+      <div class="btn-row">
+        <button class="mid-btn lv" id="levelsBtn">LEVELS</button>
+        <button class="mid-btn lv endless" id="endlessBtn">ENDLESS</button>
+      </div>
       <button class="mid-btn daily" id="rhythmBtn">DAILY JAM</button>
       <div class="btn-row">
         <button class="mid-btn" id="charBtn">CHARACTERS</button>
@@ -159,6 +169,47 @@
     </div>
   </div>
 
+  <!-- ================= LEVEL SELECT ================= -->
+  <div id="levels" class="layer sheet hidden">
+    <div class="sheet-head">
+      <button class="back-btn" data-close>&larr;</button>
+      <h2>LEVELS</h2>
+      <div class="sheet-coins"><div class="coin-icon small"></div><span class="wallet">0</span></div>
+    </div>
+    <div class="lv-top">
+      <div class="mode-row" id="lvModeRow">
+        <button class="mode-btn" data-mode="easy">EASY</button>
+        <button class="mode-btn" data-mode="normal">NORMAL</button>
+        <button class="mode-btn" data-mode="hard">HARD</button>
+        <button class="mode-btn" data-mode="insane">INSANE</button>
+      </div>
+      <div class="lv-sum" id="lvSummary"></div>
+    </div>
+    <div class="level-grid" id="levelGrid"></div>
+  </div>
+
+  <!-- ================= LEVEL COMPLETE ================= -->
+  <div id="levelcomplete" class="layer modal hidden">
+    <div class="modal-card wide">
+      <div class="go-ribbon record" id="lcRibbon">LEVEL COMPLETE</div>
+      <div class="lc-stars" id="lcStars"></div>
+      <div class="lc-sub" id="lcSub"></div>
+      <div class="go-grid">
+        <div class="go-cell"><span>Coins</span><b id="lcCoins">0</b></div>
+        <div class="go-cell"><span>Score</span><b id="lcScore">0</b></div>
+        <div class="go-cell"><span>Map</span><b id="lcMap">City</b></div>
+      </div>
+      <div class="lc-goals" id="lcGoals"></div>
+      <div class="lc-bonus" id="lcBonus"></div>
+      <button class="big-btn" id="lcNextBtn">NEXT LEVEL</button>
+      <div class="btn-row">
+        <button class="mid-btn ghost" id="lcReplayBtn">REPLAY</button>
+        <button class="mid-btn ghost" id="lcLevelsBtn">LEVELS</button>
+        <button class="mid-btn ghost" id="lcMenuBtn">MAIN MENU</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ================= HOW TO PLAY ================= -->
   <div id="how" class="layer sheet hidden">
     <div class="sheet-head">
@@ -195,7 +246,10 @@
           <li>Near-misses build a <b>combo</b>; the longer the chain, the fatter the multiplier.</li>
           <li>Coin runs on train roofs are worth double — go up there.</li>
           <li>Hoverboards absorb one wipe-out and give 20s of drift.</li>
-          <li>Every 500&nbsp;m the world speeds up and swaps biome.</li>
+          <li><b>Levels:</b> 50 per difficulty, each on a new map. Reach the finish line to unlock the next one.</li>
+          <li>&#9733; finish &middot; &#9733;&#9733; grab enough coins &middot; &#9733;&#9733;&#9733; finish without a single hit.</li>
+          <li>The <b>season</b> changes every 3 months and re-dresses every map.</li>
+          <li>In Endless the world speeds up and swaps map every 620&nbsp;m.</li>
           <li>Wipe out? Buy a <b>second chance</b> with coins and keep the score.</li>
         </ul>
       </div>
@@ -216,6 +270,7 @@
       <label class="toggle-row"><span>Motion blur / speed lines</span><input type="checkbox" id="optBlur" checked><i></i></label>
       <label class="toggle-row"><span>Show FPS</span><input type="checkbox" id="optFps"><i></i></label>
       <label class="toggle-row"><span>High contrast obstacles</span><input type="checkbox" id="optContrast"><i></i></label>
+      <div class="toggle-row season-row"><span>Season</span><button class="mid-btn ghost season-btn" id="optSeason">AUTO</button></div>
       <div class="danger-row">
         <button class="mid-btn ghost" id="resetBtn">RESET ALL PROGRESS</button>
       </div>

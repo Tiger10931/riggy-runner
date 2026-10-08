@@ -538,3 +538,77 @@ canvas#game{
   .big-btn.play{font-size:28px; padding:12px 54px;}
 }
 @media (max-height: 760px){ .mode-desc{display:none;} .menu-foot{display:none;} }
+
+/* ============================================================
+   LEVELS + SEASONS
+   ============================================================ */
+.season-chip{
+  position:absolute; top:14px; right:16px; z-index:3; padding:6px 14px; border-radius:999px;
+  font-weight:900; font-size:12px; letter-spacing:3px; color:#10161f; background:var(--sc,#ff8f3a);
+  border:2px solid rgba(255,255,255,.7); box-shadow:0 4px 0 rgba(0,0,0,.3), 0 0 16px var(--sc,#ff8f3a);
+}
+.mid-btn.lv{background:linear-gradient(180deg,#ffd45c,#f0a21a); color:#3a2400; box-shadow:0 6px 0 #8a5100;}
+.mid-btn.lv:active{box-shadow:0 2px 0 #8a5100;}
+.mid-btn.lv.endless{background:linear-gradient(180deg,#b88bff,#7a45d6); color:#fff; box-shadow:0 6px 0 #3f1f82;}
+.mid-btn.lv.endless:active{box-shadow:0 2px 0 #3f1f82;}
+
+/* in-run level bar */
+.hud-level{position:absolute; top:16px; left:50%; transform:translateX(-50%); width:min(400px,36vw); text-align:center; pointer-events:none;}
+.hl-name{white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0;}
+.hl-season{white-space:nowrap;}
+.hl-top{display:flex; justify-content:space-between; align-items:baseline; gap:10px; font-weight:900; font-size:13px; letter-spacing:2px; text-shadow:0 2px 0 rgba(0,0,0,.6);}
+.hl-season{font-size:11px; letter-spacing:2px; color:var(--sc,#ffd23f);}
+.hl-bar{position:relative; margin-top:4px; height:14px; border-radius:999px; background:rgba(8,16,32,.7); border:2px solid rgba(255,255,255,.35); overflow:visible;}
+.hl-bar i{display:block; height:100%; width:0; border-radius:999px; background:linear-gradient(90deg,#7bf39a,#ffd23f);}
+.hl-flag{position:absolute; right:-8px; top:-9px; font-size:18px;}
+@media (max-width:760px){ .hud-level{top:78px; width:min(300px,70vw);} }
+
+/* level select */
+.lv-top{display:flex; flex-direction:column; align-items:center; gap:8px; margin-bottom:10px;}
+.lv-sum{font-size:13px; letter-spacing:1px; opacity:.9;}
+.lv-sum b{color:var(--gold);}
+.level-grid{
+  display:grid; grid-template-columns:repeat(auto-fill,minmax(104px,1fr)); gap:10px;
+  padding:4px 4px 24px;
+}
+.lv-tile{
+  position:relative; padding:10px 6px 8px; border-radius:14px; text-align:center; cursor:pointer; color:#fff; font-family:var(--font);
+  border:3px solid rgba(255,255,255,.22); background:linear-gradient(180deg,var(--lc1,#3b6aa0),var(--lc2,#1b2f4f));
+  box-shadow:0 5px 0 rgba(0,0,0,.35); transition:transform .12s, border-color .12s;
+}
+.lv-tile:hover{transform:translateY(-3px); border-color:#fff;}
+.lv-tile.current{border-color:var(--gold); box-shadow:0 0 18px rgba(255,194,28,.6), 0 5px 0 rgba(0,0,0,.35);}
+.lv-tile.locked{filter:grayscale(.85) brightness(.6); cursor:not-allowed;}
+.lv-tile.locked:hover{transform:none; border-color:rgba(255,255,255,.22);}
+.lv-num{font-size:26px; font-weight:900; line-height:1; text-shadow:0 3px 0 rgba(0,0,0,.55), 0 0 6px rgba(0,0,0,.6);}
+.lv-map{font-size:9px; letter-spacing:1px; font-weight:800; margin:3px 0 4px; min-height:22px; text-transform:uppercase; text-shadow:0 1px 3px rgba(0,0,0,.9), 0 0 2px rgba(0,0,0,.9);}
+.lv-stars{font-size:15px; letter-spacing:1px; color:#ffd23f; text-shadow:0 2px 0 rgba(0,0,0,.5);}
+.lv-stars .off{color:rgba(255,255,255,.28);}
+.lv-lock{position:absolute; top:4px; right:6px; font-size:13px; line-height:1;}
+
+/* level complete */
+.lc-stars{font-size:62px; letter-spacing:6px; color:#ffd23f; text-shadow:0 5px 0 #8a5100, 0 0 24px rgba(255,210,63,.6); line-height:1.1; margin:4px 0;}
+.lc-stars .off{color:rgba(255,255,255,.2); text-shadow:none;}
+.lc-sub{font-size:13px; letter-spacing:1px; opacity:.85; margin-bottom:12px;}
+.lc-goals{display:grid; gap:4px; margin-bottom:10px; font-size:13px; text-align:left;}
+.lc-goals div{display:flex; justify-content:space-between; gap:12px; padding:6px 12px; border-radius:10px; background:rgba(255,255,255,.07);}
+.lc-goals .ok{color:#7bf39a;}
+.lc-goals .no{opacity:.6;}
+.lc-bonus{font-size:20px; font-weight:900; color:var(--gold); margin-bottom:12px; text-shadow:0 3px 0 #8a5100;}
+.go-lvl{font-size:13px; letter-spacing:1px; opacity:.85; margin-bottom:8px;}
+.season-btn{min-width:110px; padding:8px 16px !important; font-size:14px !important;}
+
+/* the menu gained a LEVELS / ENDLESS row, so shrink the mascot a bit on shorter screens */
+#menu{overflow-y:auto;}
+@media (max-height: 860px){
+  #menuMascot{height:clamp(96px, 23vh, 340px);}
+  .mid-btn{padding:10px 24px;}
+}
+@media (max-height: 640px){
+  #menuMascot{height:clamp(70px, 17vh, 340px);}
+  .menu-buttons{gap:6px;}
+}
+@media (max-width: 520px){
+  #menuMascot{height:clamp(84px, 15vh, 340px);}
+  .season-chip{top:8px; right:8px; font-size:10px; padding:4px 10px;}
+}

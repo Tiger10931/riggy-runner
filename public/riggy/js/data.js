@@ -31,7 +31,12 @@ const Save = (() => {
     rank: 1,
     runsLog: [],
     revives: 0,
-    opts: { music: true, sfx: true, shake: true, blur: true, fps: false, contrast: false },
+    opts: { music: true, sfx: true, shake: true, blur: true, fps: false, contrast: false, season: 'auto' },
+    /* level mode: 50 levels per difficulty. stars[i] = 0..3 for level i+1 */
+    levels: {
+      easy: { unlocked: 1, stars: [] }, normal: { unlocked: 1, stars: [] },
+      hard: { unlocked: 1, stars: [] }, insane: { unlocked: 1, stars: [] }
+    },
     seenTutorial: false,
     rhythmLast: '',
     rhythmBest: 0,
@@ -52,6 +57,16 @@ const Save = (() => {
       merged.upgrades = Object.assign(structuredClone(DEFAULT.upgrades), parsed.upgrades || {});
       merged.opts = Object.assign(structuredClone(DEFAULT.opts), parsed.opts || {});
       if (!Array.isArray(merged.runsLog)) merged.runsLog = [];
+      /* level progress: merge per difficulty so old saves just start at level 1 */
+      const lv = structuredClone(DEFAULT.levels);
+      ['easy', 'normal', 'hard', 'insane'].forEach(m => {
+        const src = (parsed.levels || {})[m];
+        if (!src) return;
+        lv[m].unlocked = Math.max(1, Math.min(50, Math.floor(src.unlocked) || 1));
+        lv[m].stars = Array.isArray(src.stars) ? src.stars.slice(0, 50).map(n => Math.max(0, Math.min(3, n | 0))) : [];
+      });
+      merged.levels = lv;
+      if (!['auto', 'spring', 'summer', 'autumn', 'winter'].includes(merged.opts.season)) merged.opts.season = 'auto';
       // rhythm key bindings: 4 lanes x 2 slots, each a lowercase key name or ''
       const rk = parsed.rhythmKeys;
       merged.rhythmKeys = (Array.isArray(rk) && rk.length === 4 && rk.every(l => Array.isArray(l) && l.length === 2))
@@ -235,4 +250,48 @@ const Missions = (() => {
     return null;
   }
   return { ensure, update, checkSetComplete, roll };
+})();
+
+
+/* ============================================================
+   LEVELS — 50 per difficulty, each one on a different map
+   ============================================================ */
+const Levels = (() => {
+  const COUNT = 50;
+  const clampLvl = n => Math.max(1, Math.min(COUNT, Math.floor(n) || 1));
+
+  /* metres to the finish line */
+  const goal = lvl => 500 + clampLvl(lvl) * 30;
+
+  /* every difficulty starts on a different map so the four ladders never look identical */
+  function mapIndex(lvl, mode) {
+    const off = Math.max(0, MODE_ORDER.indexOf(mode)) * 3;
+    return (clampLvl(lvl) - 1 + off) % World.BIOMES.length;
+  }
+  const mapName = (lvl, mode) => World.BIOMES[mapIndex(lvl, mode)].name;
+
+  /* 0 → 1 across the ladder, used for speed and pattern difficulty */
+  const progress = lvl => (clampLvl(lvl) - 1) / (COUNT - 1);
+
+  const info = mode => Save.d.levels[mode] || Save.d.levels.normal;
+  const unlocked = mode => info(mode).unlocked;
+  const starsFor = (mode, lvl) => info(mode).stars[lvl - 1] || 0;
+  const totalStars = mode => info(mode).stars.reduce((a, b) => a + b, 0);
+
+  /* returns { first, newUnlock } */
+  function complete(mode, lvl, stars) {
+    const inf = info(mode);
+    const prev = inf.stars[lvl - 1] || 0;
+    while (inf.stars.length < lvl) inf.stars.push(0);
+    inf.stars[lvl - 1] = Math.max(prev, stars);
+    let newUnlock = false;
+    if (lvl >= inf.unlocked && lvl < COUNT) { inf.unlocked = lvl + 1; newUnlock = true; }
+    Save.save();
+    return { first: prev === 0, newUnlock };
+  }
+
+  /* the level PLAY should drop you into: your furthest unlocked one */
+  const current = mode => unlocked(mode);
+
+  return { COUNT, goal, mapIndex, mapName, progress, unlocked, starsFor, totalStars, complete, current, clampLvl };
 })();

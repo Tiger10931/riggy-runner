@@ -21,7 +21,7 @@ const World = (() => {
       rail: '#c9d2de', wall: '#8d97a5',
       fog: '#cfe9ff', light: 1,
       scenery: ['building', 'building', 'lamp', 'billboard', 'tree'],
-      weather: null
+      weather: null, windows: true
     },
     {
       id: 'sunset', name: 'Sunset Strip',
@@ -41,7 +41,7 @@ const World = (() => {
       rail: '#9aa6b5', wall: '#2b313c',
       fog: '#141a26', light: .55, tunnel: true,
       scenery: ['pipe', 'lamp', 'grate', 'pipe'],
-      weather: 'spark'
+      weather: 'spark', dark: true, indoor: true, backdrop: 'flat'
     },
     {
       id: 'desert', name: 'Sunbaked Canyon',
@@ -61,7 +61,7 @@ const World = (() => {
       rail: '#ff5fd1', wall: '#2a2350',
       fog: '#2b1a52', light: .7, neon: true,
       scenery: ['neonSign', 'building', 'neonSign', 'lamp'],
-      weather: 'rain'
+      weather: 'rain', dark: true, windows: true
     },
     {
       id: 'snow', name: 'Frozen Yard',
@@ -71,9 +71,142 @@ const World = (() => {
       rail: '#a7b6c4', wall: '#b8c8d6',
       fog: '#e8f2fa', light: 1.02,
       scenery: ['pine', 'pine', 'lamp', 'rock'],
-      weather: 'snow'
+      weather: 'snow', backdrop: 'hills', snowCap: true
+    },
+    {
+      id: 'harbor', name: 'Harbor Docks',
+      sky: ['#5cb8e8', '#a8dcf0', '#e6f6fb'],
+      sun: '#fffbe6', sunY: .24, cloudy: .6,
+      ground: '#7a8691', groundAlt: '#6c7782', gravel: '#9aa5af',
+      rail: '#d7dee6', wall: '#56718a',
+      fog: '#d3eef8', light: 1,
+      scenery: ['container', 'lamp', 'container', 'billboard', 'rock'],
+      weather: null
+    },
+    {
+      id: 'jungle', name: 'Jungle Ruins',
+      sky: ['#3f9e8a', '#8ad1b0', '#dff5d0'],
+      sun: '#fff8c4', sunY: .26, cloudy: .45,
+      ground: '#5f7a4a', groundAlt: '#54703f', gravel: '#7f9a62',
+      rail: '#d9d2a0', wall: '#4d6a3e',
+      fog: '#bfe8c4', light: .96,
+      scenery: ['tree', 'palm', 'tree', 'rock', 'palm'],
+      weather: null, backdrop: 'hills'
+    },
+    {
+      id: 'volcano', name: 'Ember Ridge',
+      sky: ['#2a0d12', '#7a2a1a', '#ff9a4a'],
+      sun: '#ffd27a', sunY: .36, cloudy: .15,
+      ground: '#4a3532', groundAlt: '#402d2b', gravel: '#62463f',
+      rail: '#ffb066', wall: '#3a2724',
+      fog: '#a8452a', light: .8,
+      scenery: ['rock', 'mesa', 'rock', 'lamp'],
+      weather: 'spark', backdrop: 'hills'
+    },
+    {
+      id: 'crystal', name: 'Crystal Caverns',
+      sky: ['#0a1030', '#1b2a6b', '#3b4fa8'],
+      sun: null, cloudy: 0,
+      ground: '#2f3a63', groundAlt: '#28325a', gravel: '#44508a',
+      rail: '#8fe9ff', wall: '#222b52',
+      fog: '#1d2a66', light: .65,
+      scenery: ['crystal', 'crystal', 'rock', 'crystal'],
+      weather: null, dark: true, indoor: true, backdrop: 'hills'
+    },
+    {
+      id: 'market', name: 'Night Market',
+      sky: ['#140a24', '#3a1450', '#8a2f6a'],
+      sun: null, cloudy: .15,
+      ground: '#3a2c3f', groundAlt: '#322536', gravel: '#4e3c55',
+      rail: '#ffcf5f', wall: '#4a2c4a',
+      fog: '#5a2658', light: .72,
+      scenery: ['lantern', 'building', 'lantern', 'neonSign', 'lantern'],
+      weather: null, dark: true, windows: true
+    },
+    {
+      id: 'orbit', name: 'Orbit Station',
+      sky: ['#02030a', '#0a1230', '#16245a'],
+      sun: null, cloudy: 0,
+      ground: '#4a5468', groundAlt: '#414a5d', gravel: '#5a657c',
+      rail: '#7dd6ff', wall: '#2e3648',
+      fog: '#0e1838', light: .6,
+      scenery: ['pipe', 'neonSign', 'grate', 'crystal'],
+      weather: null, dark: true, indoor: true, backdrop: 'flat'
     }
   ];
+
+  /* ---------------------------------------------------------
+     SEASONS — picked from the real calendar, one per 3 months
+       Dec-Feb winter · Mar-May spring · Jun-Aug summer · Sep-Nov autumn
+     Each season re-tints every map and adds its own scenery colours + weather.
+     --------------------------------------------------------- */
+  const SEASONS = {
+    spring: { id: 'spring', name: 'SPRING', color: '#7be07f', tint: '#9be37a', amt: .13, sky: '#bfe8ff', skyAmt: .16,
+      leaf: ['#63d06a', '#ff9ecb', '#7fe38a'], weather: 'petals', sunScale: 1 },
+    summer: { id: 'summer', name: 'SUMMER', color: '#ffd23f', tint: '#ffd45c', amt: .10, sky: '#46bdff', skyAmt: .22,
+      leaf: ['#2f9e52', '#3fb85e', '#278a47'], weather: null, sunScale: 1.25 },
+    autumn: { id: 'autumn', name: 'AUTUMN', color: '#ff8f3a', tint: '#ff9a3c', amt: .20, sky: '#ffcf9a', skyAmt: .20,
+      leaf: ['#e2761f', '#c1432a', '#e8b52c'], weather: 'leaves', sunScale: 1 },
+    winter: { id: 'winter', name: 'WINTER', color: '#bfe6ff', tint: '#eaf4fb', amt: .40, sky: '#cfe0ee', skyAmt: .34,
+      leaf: ['#4f7f66', '#e8f1f7', '#7da08c'], weather: 'snow', sunScale: .85, force: true, snowCap: true }
+  };
+  const SEASON_ORDER = ['spring', 'summer', 'autumn', 'winter'];
+
+  function seasonFromDate(d = new Date()) {
+    const m = d.getMonth();                    // 0 = Jan
+    if (m === 11 || m <= 1) return 'winter';
+    if (m <= 4) return 'spring';
+    if (m <= 7) return 'summer';
+    return 'autumn';
+  }
+  /* 'auto' follows the calendar; anything else is a player override from Settings */
+  function currentSeason(pref) {
+    return SEASONS[pref && pref !== 'auto' ? pref : seasonFromDate()] || SEASONS.autumn;
+  }
+
+  /* small palette used to give every level its own colour twist */
+  const LEVEL_TINTS = ['#ff6b6b', '#ffa94d', '#ffe066', '#8ce99a', '#63e6be', '#66d9e8', '#74c0fc', '#91a7ff', '#b197fc', '#f783ac', '#a9e34b', '#ffd8a8'];
+
+  const _biomeCache = new Map();
+  /* Build the biome actually drawn: base map + season + (optional) per-level twist.
+     Results are cached so nothing is allocated per frame. */
+  function resolveBiome(idx, seasonId, level) {
+    const base = BIOMES[((idx % BIOMES.length) + BIOMES.length) % BIOMES.length];
+    const key = base.id + '|' + seasonId + '|' + (level || 0);
+    let out = _biomeCache.get(key);
+    if (out) return out;
+    const S = SEASONS[seasonId] || SEASONS.autumn;
+    const k = base.indoor ? .3 : 1;            // caves / stations barely feel the weather outside
+    const tw = level ? LEVEL_TINTS[(level * 5 + idx) % LEVEL_TINTS.length] : null;
+    const twAmt = level ? .08 : 0;
+    const tint = c => {
+      let r = U.mix(c, S.tint, S.amt * k);
+      if (tw) r = U.mix(r, tw, twAmt);
+      return r;
+    };
+    const skyTint = c => {
+      let r = U.mix(c, S.sky, S.skyAmt * k);
+      if (tw) r = U.mix(r, tw, twAmt * .8);
+      return r;
+    };
+    out = Object.assign({}, base, {
+      baseId: base.id,
+      season: S.id,
+      sky: base.sky.map(skyTint),
+      ground: tint(base.ground), groundAlt: tint(base.groundAlt), gravel: tint(base.gravel),
+      wall: tint(base.wall), fog: skyTint(base.fog),
+      leaf: S.leaf,
+      snowCap: !!(base.snowCap || (S.snowCap && !base.indoor)),
+      sunScale: S.sunScale
+    });
+    if (S.weather && !base.indoor) {
+      if (!base.weather || S.force) out.weather = S.weather;
+      else out.weather2 = S.weather;           // map keeps its own weather, season adds falling leaves / petals on top
+    }
+    _biomeCache.set(key, out);
+    return out;
+  }
+
 
   /* ---------------------------------------------------------
      SKY + parallax
@@ -92,7 +225,7 @@ const World = (() => {
     g.addColorStop(0, c0); g.addColorStop(.62, c1); g.addColorStop(1, c2);
     ctx.fillStyle = g; ctx.fillRect(0, 0, W, horizon + 42);
 
-    const dark = (B.id === 'neon' || B.id === 'tunnel') ? 1 : 0;
+    const dark = B.dark ? 1 : 0;
     if (dark) {
       stars.forEach(s => {
         const a = .35 + Math.abs(Math.sin(t * .8 + s.tw)) * .65;
@@ -111,7 +244,7 @@ const World = (() => {
       const rg = ctx.createRadialGradient(sx, sy, 8, sx, sy, 190);
       rg.addColorStop(0, U.rgba(B.sun, .95)); rg.addColorStop(.25, U.rgba(B.sun, .5)); rg.addColorStop(1, U.rgba(B.sun, 0));
       ctx.fillStyle = rg; ctx.fillRect(sx - 200, sy - 200, 400, 400);
-      ctx.beginPath(); ctx.arc(sx, sy, 44, 0, 7); ctx.fillStyle = B.sun; ctx.fill();
+      ctx.beginPath(); ctx.arc(sx, sy, 44 * (B.sunScale || 1), 0, 7); ctx.fillStyle = B.sun; ctx.fill();
     }
 
     // clouds
@@ -143,7 +276,8 @@ const World = (() => {
       ctx.globalAlpha = L.alpha;
       ctx.fillStyle = L.col;
       const off = (scroll * L.depth + camXn * 60 * L.depth) % 240;
-      if (B.id === 'desert' || B.id === 'snow') {
+      const kind = B.backdrop || (B.id === 'desert' ? 'hills' : B.id === 'tunnel' ? 'flat' : 'towers');
+      if (kind === 'hills') {
         // rolling hills / mesas
         ctx.beginPath(); ctx.moveTo(-100, horizon + 4);
         for (let x = -100; x <= W + 100; x += 20) {
@@ -151,7 +285,7 @@ const World = (() => {
           ctx.lineTo(x, y);
         }
         ctx.lineTo(W + 100, horizon + 4); ctx.closePath(); ctx.fill();
-      } else if (B.id === 'tunnel') {
+      } else if (kind === 'flat') {
         ctx.fillRect(0, horizon - L.h, W, L.h + 6);
       } else {
         // skyline of towers
@@ -162,9 +296,9 @@ const World = (() => {
           const bx = i * 120 - off * 3.4;
           if (bx > W + 130 || bx < -160) continue;
           ctx.fillRect(bx, horizon - bh, bw, bh + 6);
-          if (B.id === 'neon' || B.id === 'city') {
-            ctx.save(); ctx.globalAlpha = L.alpha * (B.id === 'neon' ? .8 : .35);
-            ctx.fillStyle = B.id === 'neon' ? '#ffe98a' : '#fff9d6';
+          if (B.windows) {
+            ctx.save(); ctx.globalAlpha = L.alpha * (B.dark ? .8 : .35);
+            ctx.fillStyle = B.dark ? '#ffe98a' : '#fff9d6';
             for (let wy = horizon - bh + 10; wy < horizon - 12; wy += 16)
               for (let wx = bx + 8; wx < bx + bw - 8; wx += 14)
                 if (((wx * 31 + wy * 17 + li) % 7) < 3) ctx.fillRect(wx, wy, 5, 7);
@@ -289,7 +423,7 @@ const World = (() => {
      --------------------------------------------------------- */
   function drawScenery(P, ctx, o, camX, camY, B) {
     const side = o.side;
-    const BASE = { building: 540, mesa: 620, billboard: 430, neonSign: 420, grate: 300 };
+    const BASE = { building: 540, mesa: 620, billboard: 430, neonSign: 420, grate: 300, container: 420, crystal: 380, lantern: 360 };
     const x = side * ((BASE[o.kind] || 350) + o.off);
     switch (o.kind) {
       case 'building': {
@@ -354,14 +488,17 @@ const World = (() => {
             if (!b || !tp2) continue;
             const w = (95 - k * 22) * b.s;
             ctx.beginPath(); ctx.moveTo(tp2.sx, tp2.sy); ctx.lineTo(b.sx + w, b.sy); ctx.lineTo(b.sx - w, b.sy); ctx.closePath();
-            ctx.fillStyle = k === 0 ? '#1f6b3a' : '#2b8049'; ctx.fill();
-            if (B.id === 'snow') { ctx.fillStyle = 'rgba(255,255,255,.75)'; ctx.fill(); ctx.globalAlpha = 1; }
+            const lf = B.leaf || ['#2b8049', '#1f6b3a'];
+            ctx.fillStyle = k === 0 ? U.shade(lf[0], -.22) : lf[0]; ctx.fill();
+            if (B.snowCap) { ctx.fillStyle = 'rgba(255,255,255,.75)'; ctx.fill(); }
           }
         } else {
           const cr = 78 * trunk.s;
-          [[0, -.1, 1], [-.55, .12, .72], [.55, .12, .72]].forEach(oo => {
+          const lf = B.leaf || ['#2f9e52'];
+          [[0, -.1, 1], [-.55, .12, .72], [.55, .12, .72]].forEach((oo, ci) => {
             ctx.beginPath(); ctx.arc(top.sx + oo[0] * cr, top.sy + oo[1] * cr, cr * oo[2], 0, 7);
-            ctx.fillStyle = '#2f9e52'; ctx.fill();
+            ctx.fillStyle = lf[(ci + o.seed) % lf.length]; ctx.fill();
+            if (B.snowCap) { ctx.fillStyle = 'rgba(255,255,255,.62)'; ctx.fill(); }
           });
         }
         break;
@@ -377,7 +514,7 @@ const World = (() => {
           ctx.beginPath(); ctx.moveTo(top.sx, top.sy);
           ctx.quadraticCurveTo(top.sx + Math.cos(a) * 60 * base.s, top.sy + Math.sin(a) * 40 * base.s - 20 * base.s,
             top.sx + Math.cos(a) * 96 * base.s, top.sy + Math.sin(a) * 62 * base.s + 8 * base.s);
-          ctx.strokeStyle = '#2e8b4f'; ctx.lineWidth = 9 * base.s; ctx.stroke();
+          ctx.strokeStyle = B.snowCap ? '#d7ead8' : ((B.leaf && B.season !== 'summer') ? B.leaf[k % B.leaf.length] : '#2e8b4f'); ctx.lineWidth = 9 * base.s; ctx.stroke();
         }
         break;
       }
@@ -397,11 +534,49 @@ const World = (() => {
           const rr = r * (.7 + ((k * 37 + o.seed) % 10) / 22);
           ctx[k ? 'lineTo' : 'moveTo'](b.sx + Math.cos(a) * rr, b.sy + Math.sin(a) * rr * .6 - r * .3);
         }
-        ctx.closePath(); U.ink(ctx, B.id === 'snow' ? '#c9d7e2' : '#9c7a53', 1.5, 'rgba(0,0,0,.35)');
+        ctx.closePath(); U.ink(ctx, B.snowCap ? '#c9d7e2' : (B.id === 'volcano' ? '#5b3a34' : B.id === 'harbor' ? '#7d8a96' : '#9c7a53'), 1.5, 'rgba(0,0,0,.35)');
         break;
       }
       case 'mesa': {
         Props.box3d(P, ctx, { x: x + side * 260, y: 0, z: o.z, w: 520, h: o.h * 2.2, d: 420, top: '#c98a52', front: '#b0713f', side: '#8f5a30', camX, camY, lw: 1 });
+        break;
+      }
+      case 'container': {
+        const cols = ['#d6533b', '#2f7fc1', '#e0a82e', '#3f9b6a', '#8a5bb5'];
+        const c = cols[o.seed % cols.length];
+        const stack = 1 + (o.seed % 3);
+        for (let k = 0; k < stack; k++)
+          Props.box3d(P, ctx, { x, y: k * 84, z: o.z, w: 150, h: 80, d: 330, top: U.shade(c, .25), front: c, side: U.shade(c, -.28), camX, camY, lw: 1.2 });
+        break;
+      }
+      case 'crystal': {
+        const b = P(x, 0, o.z), t = P(x + side * 20, o.h * 1.1, o.z);
+        if (!b || !t) return;
+        const w = 46 * b.s;
+        const hue = ['#7fe9ff', '#c58bff', '#ff8fd6', '#8affc1'][o.seed % 4];
+        ctx.save();
+        ctx.shadowColor = hue; ctx.shadowBlur = 18 * b.s + 4;
+        ctx.beginPath(); ctx.moveTo(t.sx, t.sy); ctx.lineTo(b.sx + w, b.sy); ctx.lineTo(b.sx - w, b.sy); ctx.closePath();
+        ctx.fillStyle = U.rgba(hue, .82); ctx.fill();
+        ctx.restore();
+        ctx.beginPath(); ctx.moveTo(t.sx, t.sy); ctx.lineTo(b.sx, b.sy); ctx.lineTo(b.sx - w, b.sy); ctx.closePath();
+        ctx.fillStyle = 'rgba(255,255,255,.28)'; ctx.fill();
+        ctx.beginPath(); ctx.moveTo(t.sx, t.sy); ctx.lineTo(b.sx + w, b.sy); ctx.lineTo(b.sx - w, b.sy); ctx.closePath();
+        ctx.strokeStyle = 'rgba(10,16,32,.6)'; ctx.lineWidth = Math.max(1, 2 * b.s); ctx.stroke();
+        break;
+      }
+      case 'lantern': {
+        Props.box3d(P, ctx, { x, y: 0, z: o.z, w: 12, h: 240, d: 12, top: '#5a3b2a', front: '#4a2f21', side: '#3b261b', camX, camY, lw: 1 });
+        const p = P(x - side * 30, 232, o.z);
+        if (p) {
+          const r = 34 * p.s, col = ['#ff5b5b', '#ffb03a', '#ff7ac8'][o.seed % 3];
+          const g = ctx.createRadialGradient(p.sx, p.sy, 1, p.sx, p.sy, r * 3.4);
+          g.addColorStop(0, U.rgba(col, .55)); g.addColorStop(1, U.rgba(col, 0));
+          ctx.fillStyle = g; ctx.fillRect(p.sx - r * 3.4, p.sy - r * 3.4, r * 6.8, r * 6.8);
+          U.ellipse(ctx, p.sx, p.sy, r * .8, r);
+          ctx.fillStyle = col; ctx.fill();
+          ctx.strokeStyle = 'rgba(60,20,10,.7)'; ctx.lineWidth = Math.max(1, 2 * p.s); ctx.stroke();
+        }
         break;
       }
       case 'pipe': {
@@ -453,6 +628,25 @@ const World = (() => {
           ctx.fillRect(((x + 1) % 1) * W, y * H, 26 + p.v * 40, 2);
           break;
         }
+        case 'leaves': {
+          const y = (p.y + t * (.10 + p.v * .10)) % 1;
+          const x = (p.x + Math.sin(t * .9 + i) * .03 + t * .02 * p.v) % 1;
+          const cols = ['#e2761f', '#c1432a', '#e8b52c', '#b5651d'];
+          ctx.save();
+          ctx.translate(x * W, y * H); ctx.rotate(t * (1 + p.v) + i);
+          ctx.fillStyle = cols[i % cols.length]; ctx.globalAlpha = .55 + p.s * .4;
+          ctx.fillRect(-4 - p.s * 3, -2, 8 + p.s * 6, 4);
+          ctx.restore();
+          break;
+        }
+        case 'petals': {
+          if (i % 2) break;
+          const y = (p.y + t * (.08 + p.v * .08)) % 1;
+          const x = (p.x + Math.sin(t * .7 + i) * .035) % 1;
+          ctx.fillStyle = i % 4 ? 'rgba(255,182,213,.85)' : 'rgba(255,255,255,.85)';
+          ctx.beginPath(); ctx.ellipse(x * W, y * H, 3.2 + p.s * 2.4, 2 + p.s, t + i, 0, 7); ctx.fill();
+          break;
+        }
         case 'spark': {
           if (i % 3) break;
           const y = (p.y - t * (.6 + p.v)) % 1;
@@ -490,5 +684,5 @@ const World = (() => {
     ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
   }
 
-  return { LANE_W, LANES, BIOMES, drawSky, drawBackdrop, drawGround, drawFog, drawScenery, drawWeather, drawSpeedLines, drawVignette };
+  return { LANE_W, LANES, BIOMES, SEASONS, SEASON_ORDER, seasonFromDate, currentSeason, resolveBiome, drawSky, drawBackdrop, drawGround, drawFog, drawScenery, drawWeather, drawSpeedLines, drawVignette };
 })();

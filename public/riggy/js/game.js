@@ -81,6 +81,7 @@ const Game = (() => {
     boardT: 0, boards: 0, boardUsed: 0, extraLife: 0,
     shake: 0, flash: 0, hitFlash: 0,
     biome: 0, biomeBlend: 0,
+    level: 0, goalDist: 0, hits: 0, coinPicks: 0, finishCoins: false, runId: 0,
     runStats: null,
     tricks: 0, near: 0, maxCombo: 1, roofTime: 0, magnets: 0,
     perk: {},
@@ -89,7 +90,9 @@ const Game = (() => {
   };
 
   let obstacles = [], coins = [], pickups = [], scenery = [], particles = [], floaters = [];
-  let spawnZ = 0, scenerySpawnZ = 0, patternCount = 0;
+  let spawnZ = 0, scenerySpawnZ = 0, patternCount = 0, goalZ = 0;
+  /* what the next start() launches: a numbered level or endless mode */
+  let RUN = { kind: 'level', level: 1 };
 
   /* ---------------- projection ---------------- */
   let camZ = 0, camX = 0;
@@ -105,8 +108,13 @@ const Game = (() => {
   }
 
   /* ---------------- helpers ---------------- */
-  const biome = () => World.BIOMES[S.biome % World.BIOMES.length];
-  const nextBiome = () => World.BIOMES[(S.biome + 1) % World.BIOMES.length];
+  /* the season follows the real calendar unless Settings overrides it */
+  const season = () => World.currentSeason(Save.d.opts.season);
+  /* level mode: each level has its own map (and colour twist); endless cycles every 620 m */
+  const biome = () => S.level
+    ? World.resolveBiome(Levels.mapIndex(S.level, MODE.id), season().id, S.level)
+    : World.resolveBiome(S.biome, season().id, 0);
+  const nextBiome = () => S.level ? null : World.resolveBiome(S.biome + 1, season().id, 0);
   const laneX = i => World.LANES[i];
 
   function puDuration(kind) {
@@ -330,9 +338,20 @@ const Game = (() => {
   function generateAhead() {
     const limit = S.z + 7000;
     while (spawnZ < limit) {
-      const difficulty = U.clamp(MODE.diffBase + S.dist / MODE.rampDist, 0, MODE.diffMax);
+      /* level mode: leave a clear run-in so nothing is parked on the finish line */
+      if (S.level && spawnZ > goalZ - 2600) {
+        if (!S.finishCoins) {
+          S.finishCoins = true;
+          for (let l = 0; l < 3; l++) addCoinRun(laneX(l), 34, goalZ - 1900 + l * 150, 10, 74, l === 1 ? 70 : 0);
+        }
+        spawnZ = limit;
+        break;
+      }
+      const difficulty = S.level
+        ? U.clamp(U.lerp(MODE.diffBase, MODE.diffMax, Levels.progress(S.level) * .82 + U.clamp(S.dist / Math.max(1, S.goalDist), 0, 1) * .18), 0, MODE.diffMax)
+        : U.clamp(MODE.diffBase + S.dist / MODE.rampDist, 0, MODE.diffMax);
       let idx;
-      if (S.dist < MODE.intro) idx = U.pick([10, 0, 6]);
+      if (S.dist < (S.level ? MODE.intro * .5 : MODE.intro)) idx = U.pick([10, 0, 6]);
       else if (Math.random() > difficulty * .85) idx = U.pick(EASY);
       else idx = U.randInt(0, PATTERNS.length - 1);
       const consumed = PATTERNS[idx](spawnZ, difficulty);
@@ -421,12 +440,19 @@ const Game = (() => {
 
     applyPerks();
     applyMode();
+    const lvl = RUN.kind === 'level' ? Levels.clampLvl(RUN.level) : 0;
+    if (lvl) {
+      /* later levels start quicker and top out a little higher */
+      SPEED_START = Math.round(SPEED_START * (1 + (lvl - 1) * 0.004));
+      SPEED_MAX = Math.round(SPEED_MAX * (1 + (lvl - 1) * 0.0025));
+    }
     S.coinAcc = 0;
     const lbl = document.querySelector('.score-label');
     if (lbl) { lbl.textContent = MODE.id === 'normal' ? 'SCORE' : 'SCORE · ' + MODE.name; lbl.style.color = MODE.id === 'normal' ? '' : MODE.color; }
 
     obstacles = []; coins = []; pickups = []; scenery = []; particles = []; floaters = [];
-    const headStart = ((Save.d.upgrades.headstart || 0) * 150 + (S.perk.headstart ? 300 : 0) + (S.perk.hop ? 150 : 0)) * UNITS_PER_M;
+    /* head starts only apply to endless — a level is always the same stretch of track */
+    const headStart = lvl ? 0 : ((Save.d.upgrades.headstart || 0) * 150 + (S.perk.headstart ? 300 : 0) + (S.perk.hop ? 150 : 0)) * UNITS_PER_M;
 
     Object.assign(S, {
       mode: 'countdown', t: 0,
@@ -439,10 +465,13 @@ const Game = (() => {
       powers: { magnet: 0, jetpack: 0, x2: 0, sneakers: 0, shield: 0 },
       boardT: 0, boardUsed: 0,
       shake: 0, flash: 0, hitFlash: 0,
-      biome: 0, biomeBlend: 0,
+      biome: lvl ? Math.min(5, Math.floor((lvl - 1) / 10)) : 0, biomeBlend: 0,
+      level: lvl, goalDist: lvl ? Levels.goal(lvl) : 0, hits: 0, coinPicks: 0, finishCoins: false,
       tricks: 0, near: 0, maxCombo: 1, roofTime: 0, magnets: 0,
       camX: 0, camShakeX: 0, camShakeY: 0, lastMissionCheck: 0
     });
+    goalZ = S.goalDist * UNITS_PER_M;
+    UI.setLevelHud(lvl ? { n: lvl, name: biome().name, season: season() } : null);
     S.boards = Save.d.hoverboards + (S.perk.board ? 1 : 0);
     if (S.perk.shield) S.powers.shield = puDuration('shield');
     S.extraLife = S.perk.twohits ? 1 : 0;     // Ferrick: survive one extra lethal hit per run
@@ -458,6 +487,7 @@ const Game = (() => {
     patternCount = 0;
     generateAhead();
 
+    if (lvl) UI.toast(`LEVEL ${lvl} · ${biome().name} · ${season().name}`, 'gold');
     UI.countdown(() => {
       S.mode = 'play';
       if (S.perk.twohits) UI.toast('Ferrick can take 2 hits!', 'good');
@@ -466,6 +496,7 @@ const Game = (() => {
 
   function toMenu() {
     S.mode = 'menu';
+    S.level = 0; S.biome = 0; S.biomeBlend = 0;
     UI.el.hud.classList.add('hidden');
     UI.show('menu');
     UI.refreshStats();
@@ -487,26 +518,22 @@ const Game = (() => {
     }
   }
 
-  function die() {
-    if (S.mode !== 'play') return;
-    S.mode = 'dead';
-    S.state = 'crash'; S.crashT = 0;
-    S.shake = 1; S.hitFlash = 1;
-    Sound.sfx.crash();
-    Sound.duck(true);
-    buzz(140);
-    puff(S.laneX, S.y + 60, S.z, 22, 'rgba(255,255,255,.85)', 220);
-
+  /* writes the run's stats into the save (safe to call again after a revive) */
+  function settleRun() {
     const d = Save.d;
     const B = S.banked;
     const mb = d.bestByMode || (d.bestByMode = { easy: 0, normal: 0, hard: 0, insane: 0 });
-    const record = S.score > (mb[MODE.id] || 0);
-    mb[MODE.id] = Math.max(mb[MODE.id] || 0, Math.floor(S.score));
-    d.best = Math.max(d.best, Math.floor(S.score));
-    d.bestDist = Math.max(d.bestDist, Math.floor(S.dist));
+    let record = false;
+    if (!S.level) {                         // leaderboards belong to endless mode
+      record = S.score > (mb[MODE.id] || 0);
+      mb[MODE.id] = Math.max(mb[MODE.id] || 0, Math.floor(S.score));
+      d.best = Math.max(d.best, Math.floor(S.score));
+      d.bestDist = Math.max(d.bestDist, Math.floor(S.dist));
+    }
     if (!B.counted) { d.runs++; B.counted = true; }
     d.totalDist += Math.floor(S.dist) - B.dist;
     d.hoverboards = Math.max(0, d.hoverboards - S.boardUsed);
+    S.boardUsed = 0;
     d.totalJumps += S.runStats.jumps - B.jumps;
     d.totalRolls += S.runStats.rolls - B.rolls;
     d.totalTricks += S.tricks - B.tricks;
@@ -528,13 +555,31 @@ const Game = (() => {
     S.runStats.biomeIdx = S.biome;
     const done = Missions.update(S.runStats);
     const setDone = Missions.checkSetComplete();
-    Save.pushRun({ score: Math.floor(S.score), dist: Math.floor(S.dist), coins: S.coins, mode: MODE.id, at: Date.now() });
+    if (!S.level) Save.pushRun({ score: Math.floor(S.score), dist: Math.floor(S.dist), coins: S.coins, mode: MODE.id, at: Date.now() });
+    return { record, done, setDone, best: mb[MODE.id] };
+  }
 
+  function die() {
+    if (S.mode !== 'play') return;
+    S.mode = 'dead';
+    S.state = 'crash'; S.crashT = 0;
+    S.shake = 1; S.hitFlash = 1;
+    S.hits++;
+    Sound.sfx.crash();
+    Sound.duck(true);
+    buzz(140);
+    puff(S.laneX, S.y + 60, S.z, 22, 'rgba(255,255,255,.85)', 220);
+
+    const { record, done, setDone, best } = settleRun();
+
+    const runId = ++S.runId;
     setTimeout(() => {
+      if (S.mode !== 'dead' || S.runId !== runId) return;   // player already restarted / left
       UI.gameOver({
         score: Math.floor(S.score), coins: S.coins, dist: S.dist,
         maxCombo: S.maxCombo, near: S.near, tricks: S.tricks,
-        biome: biome().name, record, mode: MODE.id, best: mb[MODE.id],
+        biome: biome().name, record, mode: MODE.id, best,
+        level: S.level, levelPct: S.level ? Math.min(99, Math.floor(100 * S.dist / S.goalDist)) : 0,
         reviveCost: reviveCost(), canRevive: Save.d.coins >= reviveCost() && S.reviveCount < MODE.maxRevives
       });
       if (record) Sound.sfx.newRecord();
@@ -542,6 +587,43 @@ const Game = (() => {
       if (setDone) UI.toast(`RANK ${setDone.rank}! +${setDone.bonus} coins`, 'gold');
       UI.refreshStats();
     }, 1300);
+  }
+
+  /* ---- crossing the finish line ---- */
+  function winLevel() {
+    if (S.mode !== 'play') return;
+    S.mode = 'win';
+    S.state = 'cheer';
+    S.powers = { magnet: 0, jetpack: 0, x2: 0, sneakers: 0, shield: 0 };
+    S.boardT = 0; S.flash = .8; S.rolling = 0;
+    Sound.sfx.newRecord();
+    buzz(60);
+
+    const lvl = S.level;
+    const coinGoal = Math.ceil(S.goalDist * .10);
+    const gotCoins = S.coinPicks >= coinGoal;
+    const clean = S.hits === 0 && S.reviveCount === 0;
+    const stars = 1 + (gotCoins ? 1 : 0) + (clean ? 1 : 0);
+
+    const { done, setDone } = settleRun();
+    const res = Levels.complete(MODE.id, lvl, stars);
+    const bonus = Math.round((20 + lvl * 4) * (.5 + .5 * stars) * MODE.coins * (res.first ? 1 : .25));
+    Save.addCoins(bonus);
+
+    const runId = ++S.runId;
+    setTimeout(() => {
+      if (S.mode !== 'win' || S.runId !== runId) return;
+      UI.levelComplete({
+        level: lvl, mode: MODE.id, stars, gotCoins, clean, coinGoal, coinPicks: S.coinPicks,
+        coins: S.coins, bonus, score: Math.floor(S.score), map: biome().name, season: season(),
+        hasNext: lvl < Levels.COUNT, first: res.first,
+        nextMap: lvl < Levels.COUNT ? Levels.mapName(lvl + 1, MODE.id) : '',
+        allDone: lvl >= Levels.COUNT
+      });
+      if (done.length) done.forEach(m => UI.toast('Mission done: ' + m.text, 'good'));
+      if (setDone) UI.toast(`RANK ${setDone.rank}! +${setDone.bonus} coins`, 'gold');
+      UI.refreshStats();
+    }, 1500);
   }
 
   /* ---- second chance: pay coins to keep the run alive ---- */
@@ -663,6 +745,7 @@ const Game = (() => {
     if (S.invuln > 0) return true;
     if (S.boardT > 0) {
       const b = BOARDS.find(x => x.id === Save.d.board) || BOARDS[0];
+      S.hits++;
       S.boardT = b.tough ? Math.max(0, S.boardT - 6) : 0;
       if (!b.tough) S.boardT = 0;
       S.invuln = 1.1;
@@ -674,6 +757,7 @@ const Game = (() => {
       return true;
     }
     if (S.powers.shield > 0) {
+      S.hits++;
       S.powers.shield = 0;
       S.invuln = 1.2;
       Sound.sfx.shield();
@@ -684,6 +768,7 @@ const Game = (() => {
       return true;
     }
     if (S.extraLife > 0) {
+      S.hits++;
       S.extraLife--;
       S.invuln = 1.4;
       Sound.sfx.stumble();
@@ -698,6 +783,7 @@ const Game = (() => {
 
   function stumble() {
     if (S.invuln > 0) return;
+    S.hits++;
     S.stumbleT = .55;
     S.speed = Math.max(SPEED_START * .8, S.speed * .72);
     S.invuln = .7;
@@ -815,6 +901,19 @@ const Game = (() => {
       camFollow(dt);
       return;
     }
+    if (S.mode === 'win') {
+      /* coast past the line, land, and throw confetti */
+      S.speed = Math.max(0, S.speed - 1100 * dt);
+      S.z += S.speed * dt;
+      S.dist = S.z / UNITS_PER_M;
+      S.laneX = U.lerp(S.laneX, 0, 1 - Math.pow(.02, dt));
+      S.vy -= GRAV * dt; S.y = Math.max(0, S.y + S.vy * dt); if (S.y === 0) S.vy = 0;
+      if (S.flash > 0) S.flash = Math.max(0, S.flash - dt * 2);
+      if (Math.random() < dt * 40) sparkle(U.rand(260, -260), U.rand(380, 120), S.z + U.rand(500, 150),
+        U.pick(['rgba(255,214,80,.95)', 'rgba(255,110,160,.95)', 'rgba(110,220,255,.95)', 'rgba(140,255,150,.95)']));
+      updateParticles(dt); camFollow(dt);
+      return;
+    }
     if (S.mode !== 'play') { updateParticles(dt); camFollow(dt); return; }
 
     /* speed + distance */
@@ -825,14 +924,16 @@ const Game = (() => {
     Sound.setIntensity(U.inv(SPEED_START, SPEED_MAX, S.speed));
 
     /* biome cycling */
-    const bi = Math.floor(S.dist / BIOME_METRES);
-    const frac = (S.dist / BIOME_METRES) % 1;
-    if (bi !== S.biome) {
-      S.biome = bi;
-      UI.toast('Entering ' + biome().name, 'gold');
-      S.flash = .5;
-    }
-    S.biomeBlend = U.clamp((frac - .86) / .14, 0, 1);
+    if (!S.level) {
+      const bi = Math.floor(S.dist / BIOME_METRES);
+      const frac = (S.dist / BIOME_METRES) % 1;
+      if (bi !== S.biome) {
+        S.biome = bi;
+        UI.toast('Entering ' + biome().name, 'gold');
+        S.flash = .5;
+      }
+      S.biomeBlend = U.clamp((frac - .86) / .14, 0, 1);
+    } else S.biomeBlend = 0;
 
     /* score */
     S.score += S.speed * dt * .045 * S.multiplier * MODE.score;
@@ -922,6 +1023,7 @@ const Game = (() => {
     cull();
     collide();
     if (S.mode !== 'play') return;
+    if (S.level && S.dist >= S.goalDist) { winLevel(); return; }
 
     updateCoins(dt);
     updatePickups(dt);
@@ -976,6 +1078,7 @@ const Game = (() => {
         Math.abs(c.y - (S.y + 62)) < 110;
       if (near) {
         c.got = true;
+        S.coinPicks++;
         const val = Math.round(1 * goldenBoost * (S.powers.x2 > 0 ? 2 : 1));
         S.coinAcc = (S.coinAcc || 0) + val * (MODE.coins - 1);
         const bonusCoins = Math.floor(S.coinAcc); S.coinAcc -= bonusCoins;
@@ -1054,6 +1157,7 @@ const Game = (() => {
     for (const o of obstacles) items.push({ z: o.z + (o.d || 60) / 2, kind: 'o', o });
     for (const c of coins) if (!c.got) items.push({ z: c.z, kind: 'c', o: c });
     for (const p of pickups) if (!p.got) items.push({ z: p.z, kind: 'p', o: p });
+    if (S.level && goalZ - camZ < 4200) items.push({ z: goalZ, kind: 'g', o: null });
     items.push({ z: S.z, kind: 'me', o: null });
     for (const p of particles) items.push({ z: p.z, kind: 'fx', o: p });
     for (const f of floaters) items.push({ z: f.z, kind: 'ft', o: f });
@@ -1068,6 +1172,7 @@ const Game = (() => {
         case 'c': Props.coin(P, ctx, it.o, S.t); break;
         case 'p': Props.powerup(P, ctx, it.o, S.t); break;
         case 'me': drawPlayer(); break;
+        case 'g': drawFinish(); break;
         case 'fx': drawParticle(it.o); break;
         case 'ft': drawFloater(it.o); break;
       }
@@ -1076,6 +1181,7 @@ const Game = (() => {
     World.drawFog(ctx, B, W, horizon);
     if (Save.d.opts.blur) World.drawSpeedLines(ctx, W, H, U.inv(SPEED_MAX * .62, SPEED_MAX, S.speed) * (S.boardT > 0 ? 1.3 : 1), S.t);
     World.drawWeather(ctx, B.weather, S.t, W, H, U.inv(SPEED_START, SPEED_MAX, S.speed));
+    if (B.weather2) World.drawWeather(ctx, B.weather2, S.t, W, H, 0);
     World.drawVignette(ctx, W, H, B.id === 'tunnel' || B.id === 'neon' ? .7 : .45);
 
     if (S.powers.magnet > 0) magnetOverlay();
@@ -1083,6 +1189,28 @@ const Game = (() => {
     if (S.hitFlash > 0) { ctx.fillStyle = `rgba(255,40,40,${S.hitFlash * .45})`; ctx.fillRect(0, 0, W, H); }
 
     ctx.restore();
+  }
+
+  /* checkered line, two posts and a banner */
+  function drawFinish() {
+    const z = goalZ, cells = 14, half = 230, cw = (half * 2) / cells;
+    for (let row = 0; row < 3; row++) for (let c = 0; c < cells; c++) {
+      const x0 = -half + c * cw, z0 = z + row * 34;
+      const a = P(x0, 2, z0), b = P(x0 + cw, 2, z0), d = P(x0 + cw, 2, z0 + 34), e = P(x0, 2, z0 + 34);
+      if (!a || !b || !d || !e) continue;
+      ctx.beginPath(); ctx.moveTo(a.sx, a.sy); ctx.lineTo(b.sx, b.sy); ctx.lineTo(d.sx, d.sy); ctx.lineTo(e.sx, e.sy); ctx.closePath();
+      ctx.fillStyle = (c + row) % 2 ? '#10161f' : '#ffffff'; ctx.fill();
+    }
+    [-1, 1].forEach(sd => Props.box3d(P, ctx, {
+      x: sd * 262, y: 0, z, w: 30, h: 330, d: 30,
+      top: '#ffd0d0', front: '#e5262b', side: '#9c1a1e', camX, camY: CAM_Y, lw: 1.4
+    }));
+    Props.box3d(P, ctx, {
+      x: 0, y: 300, z, w: 560, h: 86, d: 24,
+      top: '#ff9a9a', front: '#e5262b', side: '#9c1a1e', camX, camY: CAM_Y, lw: 1.6
+    });
+    const p = P(0, 343, z - 14);
+    if (p && p.s > .08) U.text(ctx, 'FINISH', p.sx, p.sy, { size: 66 * p.s, color: '#ffffff', outline: '#10161f', lw: 7 * p.s + 1 });
   }
 
   function drawObstacle(o, contrast) {
@@ -1198,7 +1326,7 @@ const Game = (() => {
       Sound.resume();
 
       if (S.mode === 'menu') {
-        if (k === 'enter' || k === ' ') { const anySheet = ['characters', 'shop', 'missions', 'how', 'settings'].some(id => !document.getElementById(id).classList.contains('hidden')); if (!anySheet) start(); }
+        if (k === 'enter' || k === ' ') { const anySheet = ['characters', 'shop', 'missions', 'how', 'settings', 'levels'].some(id => !document.getElementById(id).classList.contains('hidden')); if (!anySheet) play(); }
         if (k === 'escape') UI.hideAllSheets();
         return;
       }
@@ -1264,14 +1392,15 @@ const Game = (() => {
     dt = Math.min(dt, 1 / 20);        // never simulate a giant step
     S.dt = dt;
 
-    if (S.mode === 'play' || S.mode === 'dead' || S.mode === 'countdown') update(dt);
+    if (S.mode === 'play' || S.mode === 'dead' || S.mode === 'countdown' || S.mode === 'win') update(dt);
     else { S.t += dt; camFollow(dt); }
 
     render();
     UI.animateMascots(dt);
 
-    if (S.mode === 'play' || S.mode === 'dead' || S.mode === 'countdown') {
+    if (S.mode === 'play' || S.mode === 'dead' || S.mode === 'countdown' || S.mode === 'win') {
       UI.hud({
+        levelPct: S.level ? U.clamp(S.dist / S.goalDist, 0, 1) : -1,
         score: S.score, dist: S.dist, speed: S.speed * 0.09,
         coins: S.coins, multiplier: S.multiplier, boards: S.boards, onBoard: S.boardT > 0
       });
@@ -1320,7 +1449,18 @@ const Game = (() => {
     requestAnimationFrame(frame);
   }
 
-  const api = { start, toMenu, togglePause, deployBoard, revive, boot, get state() { return S; } };
+  function play() { RUN = { kind: 'level', level: Levels.current(Save.d.mode) }; start(); }
+  function playLevel(n) {
+    const lvl = Math.min(Levels.clampLvl(n), Levels.unlocked(Save.d.mode));
+    RUN = { kind: 'level', level: lvl };
+    start();
+  }
+  function playEndless() { RUN = { kind: 'endless', level: 0 }; start(); }
+
+  const api = {
+    start, play, playLevel, playEndless, toMenu, togglePause, deployBoard, revive, boot,
+    get run() { return RUN; }, get season() { return season(); }, get state() { return S; }
+  };
   return api;
 })();
 
