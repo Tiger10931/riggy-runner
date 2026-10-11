@@ -622,3 +622,16 @@ canvas#game{
   pointer-events:none;
 }
 @media (max-width:480px){ .free-badge{left:8px; bottom:8px; max-width:150px; font-size:10px; padding:5px 9px;} }
+
+/* ---- credits button + sheet ---- */
+.credits-btn{
+  position:absolute; top:14px; left:16px; z-index:3; padding:6px 14px; border-radius:999px;
+  font:inherit; font-weight:900; font-size:12px; letter-spacing:3px; color:#fff; cursor:pointer;
+  background:rgba(255,255,255,.14); border:2px solid rgba(255,255,255,.5); box-shadow:0 4px 0 rgba(0,0,0,.3);
+}
+.credits-btn:active{transform:translateY(2px); box-shadow:0 2px 0 rgba(0,0,0,.3);}
+.credits-body{display:flex; justify-content:center; padding-top:20px;}
+.credits-card{max-width:560px; text-align:center; font-weight:800; letter-spacing:1px; line-height:1.6; font-size:16px; padding:24px 28px;}
+.credits-card p{margin:0 0 16px;} .credits-card p:last-child{margin:0;}
+.credits-card a{color:var(--gold,#ffd45c); word-break:break-all;}
+@media (max-width:480px){ .credits-btn{top:8px; left:8px; font-size:10px; padding:4px 10px;} .credits-card{font-size:14px;} }

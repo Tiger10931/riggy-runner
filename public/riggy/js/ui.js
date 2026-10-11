@@ -10,7 +10,7 @@ const UI = (() => {
 
   const el = {
     hud: $('#hud'), menu: $('#menu'), characters: $('#characters'), shop: $('#shop'),
-    missions: $('#missions'), how: $('#how'), settings: $('#settings'),
+    missions: $('#missions'), how: $('#how'), credits: $('#credits'), settings: $('#settings'),
     levels: $('#levels'), levelcomplete: $('#levelcomplete'),
     levelHud: $('#levelHud'), hlName: $('#hlName'), hlSeason: $('#hlSeason'), hlFill: $('#hlFill'),
     pause: $('#pause'), gameover: $('#gameover'), countdown: $('#countdown'),
@@ -30,7 +30,7 @@ const UI = (() => {
     ['menu', 'characters', 'shop', 'missions', 'how', 'settings', 'levels', 'pause', 'gameover', 'levelcomplete'].forEach(k => el[k].classList.add('hidden'));
     if (name) el[name].classList.remove('hidden');
   }
-  function hideAllSheets() { ['characters', 'shop', 'missions', 'how', 'settings', 'levels'].forEach(k => el[k].classList.add('hidden')); }
+  function hideAllSheets() { ['characters', 'shop', 'missions', 'how', 'credits', 'settings', 'levels'].forEach(k => el[k].classList.add('hidden')); }
 
   function toast(msg, kind = '') {
     const d = document.createElement('div');
@@ -545,6 +545,7 @@ const UI = (() => {
     nav($('#missionsBtn'), () => { buildMissions(); el.missions.classList.remove('hidden'); refreshStats(); });
     nav($('#rhythmBtn'), () => Rhythm.open());
     nav($('#howBtn'), () => el.how.classList.remove('hidden'));
+    nav($('#creditsBtn'), () => el.credits.classList.remove('hidden'));
     nav($('#settingsBtn'), () => { bindSettings(); el.settings.classList.remove('hidden'); });
 
     $$('[data-close]').forEach(b => b.onclick = () => { Sound.sfx.back(); hideAllSheets(); refreshStats(); });
