@@ -126,7 +126,7 @@ const UI = (() => {
   function setLevelHud(info) {
     if (!info) { el.levelHud.classList.add('hidden'); return; }
     el.levelHud.classList.remove('hidden');
-    el.hlName.textContent = `LEVEL ${info.n} · ${info.name.toUpperCase()}`;
+    el.hlName.textContent = info.n === 'HACKER' ? 'HACKER · HACKER' : `LEVEL ${info.n} · ${info.name.toUpperCase()}`;
     el.hlSeason.textContent = info.season.name;
     el.hlFill.style.width = '0%';
   }
@@ -173,6 +173,19 @@ const UI = (() => {
   /* ---------------- level complete ---------------- */
   function levelComplete(r) {
     const rm = MODES[r.mode] || MODES.normal;
+    if (r.hacker) {
+      $('#lcRibbon').textContent = 'HACKER HACKER HACKER';
+      $('#lcStars').innerHTML = starStr(3);
+      $('#lcSub').textContent = 'HACKER · HACKER · HACKER';
+      $('#lcCoins').textContent = U.fmt(r.coins);
+      $('#lcScore').textContent = U.fmt(r.score);
+      $('#lcMap').textContent = 'HACKER';
+      $('#lcGoals').innerHTML = '<div class="ok"><span>HACKER</span><b>&#10004;</b></div>';
+      $('#lcBonus').textContent = 'HACKER';
+      $('#lcNextBtn').classList.add('hidden');
+      show('levelcomplete');
+      return;
+    }
     $('#lcRibbon').textContent = r.allDone ? 'ALL 50 LEVELS CLEARED!' : `LEVEL ${r.level} COMPLETE`;
     $('#lcStars').innerHTML = starStr(r.stars);
     $('#lcSub').textContent = `${rm.name} · ${r.map} · ${r.season.name}` + (r.hasNext ? ` — next up: ${r.nextMap}` : '');
@@ -259,7 +272,7 @@ const UI = (() => {
   };
 
   /* ---------------- secret code: type "neegy" anywhere ---------------- */
-  let typedBuf = '';
+  let typedBuf = '', sorryBuf = '';
   function revealSecret(id, announce) {
     const first = !(Save.d.secretsFound || []).includes(id);
     if (first) { Save.d.secretsFound = (Save.d.secretsFound || []).concat(id); Save.save(); }
@@ -273,7 +286,19 @@ const UI = (() => {
     const tag = e.target && e.target.tagName;
     if (tag === 'TEXTAREA' || (tag === 'INPUT' && e.target.type === 'text')) return;
     typedBuf = (typedBuf + e.key.toLowerCase()).slice(-20);
-    if (typedBuf.endsWith('neegy')) {
+    sorryBuf = (sorryBuf + e.key.toLowerCase()).slice(-140);
+    if (sorryBuf === 'imsorry'.repeat(20) && Game.escapeHacker()) {
+      sorryBuf = ''; typedBuf = '';
+      toast('...fine. You are free.', 'good');
+      return;
+    }
+    if (typedBuf.endsWith('sweetala')) {
+      typedBuf = '';
+      /* secret: wipe progress and jump into the HACKER level */
+      toast('HACKER HACKER HACKER', 'bad');
+      refreshStats(); buildModes(); buildLevels(); buildCharacters(); buildShop(); buildMissions(); bindSettings();
+      Game.playHacker();
+    } else if (typedBuf.endsWith('neegy')) {
       typedBuf = '';
       revealSecret('neegy', 'SECRET FOUND — Neegy is now in CHARACTERS for 20,000 coins!');
     } else if (typedBuf.endsWith('unlockalllevels')) {

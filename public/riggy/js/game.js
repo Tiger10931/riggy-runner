@@ -111,10 +111,10 @@ const Game = (() => {
   /* the season follows the real calendar unless Settings overrides it */
   const season = () => World.currentSeason(Save.d.opts.season);
   /* level mode: each level has its own map (and colour twist); endless cycles every 620 m */
-  const biome = () => S.level
+  const biome = () => S.hacker ? World.HACKER : S.level
     ? World.resolveBiome(Levels.mapIndex(S.level, MODE.id), season().id, S.level)
     : World.resolveBiome(S.biome, season().id, 0);
-  const nextBiome = () => S.level ? null : World.resolveBiome(S.biome + 1, season().id, 0);
+  const nextBiome = () => S.hacker || S.level ? null : World.resolveBiome(S.biome + 1, season().id, 0);
   const laneX = i => World.LANES[i];
 
   function puDuration(kind) {
@@ -348,7 +348,7 @@ const Game = (() => {
         break;
       }
       const difficulty = S.level
-        ? U.clamp(U.lerp(MODE.diffBase, MODE.diffMax, Levels.progress(S.level) * .82 + U.clamp(S.dist / Math.max(1, S.goalDist), 0, 1) * .18), 0, MODE.diffMax)
+        ? U.clamp(U.lerp(MODE.diffBase, MODE.diffMax, (S.hacker ? .5 + U.clamp(S.dist / 3000, 0, 1) * .5 : Levels.progress(S.level) * .82 + U.clamp(S.dist / Math.max(1, S.goalDist), 0, 1) * .18)), 0, MODE.diffMax)
         : U.clamp(MODE.diffBase + S.dist / MODE.rampDist, 0, MODE.diffMax);
       let idx;
       if (S.dist < (S.level ? MODE.intro * .5 : MODE.intro)) idx = U.pick([10, 0, 6]);
@@ -377,8 +377,8 @@ const Game = (() => {
           scenery.push({
             kind, side, z: scenerySpawnZ + U.rand(200, -100),
             off: U.rand(220, 0), h: 120 + Math.random() * 320,
-            col: U.pick(['#8d97a5', '#b0757a', '#7d8a9a', '#9e8f6f', '#6f7f96', '#c07f6a']),
-            text: U.pick(['RIGGY', 'DASH!', 'DANNO', 'CAL', 'GO GO', '3 LANES']),
+            col: S.hacker ? U.pick(['#003b10', '#001a05', '#00ff41']) : U.pick(['#8d97a5', '#b0757a', '#7d8a9a', '#9e8f6f', '#6f7f96', '#c07f6a']),
+            text: S.hacker ? 'HACKER' : U.pick(['RIGGY', 'DASH!', 'DANNO', 'CAL', 'GO GO', '3 LANES']),
             seed: U.randInt(0, 99)
           });
         }
@@ -441,6 +441,8 @@ const Game = (() => {
     applyPerks();
     applyMode();
     const lvl = RUN.kind === 'level' ? Levels.clampLvl(RUN.level) : 0;
+    const hacker = !!RUN.hacker;
+    document.body.classList.toggle('hacker', hacker);
     if (lvl) {
       /* later levels start quicker and top out a little higher */
       SPEED_START = Math.round(SPEED_START * (1 + (lvl - 1) * 0.004));
@@ -448,7 +450,8 @@ const Game = (() => {
     }
     S.coinAcc = 0;
     const lbl = document.querySelector('.score-label');
-    if (lbl) { lbl.textContent = MODE.id === 'normal' ? 'SCORE' : 'SCORE · ' + MODE.name; lbl.style.color = MODE.id === 'normal' ? '' : MODE.color; }
+    if (lbl && RUN.hacker) { lbl.textContent = 'HACKER'; lbl.style.color = '#00ff41'; }
+    else if (lbl) { lbl.textContent = MODE.id === 'normal' ? 'SCORE' : 'SCORE · ' + MODE.name; lbl.style.color = MODE.id === 'normal' ? '' : MODE.color; }
 
     obstacles = []; coins = []; pickups = []; scenery = []; particles = []; floaters = [];
     /* head starts only apply to endless — a level is always the same stretch of track */
@@ -466,12 +469,12 @@ const Game = (() => {
       boardT: 0, boardUsed: 0,
       shake: 0, flash: 0, hitFlash: 0,
       biome: lvl ? Math.min(5, Math.floor((lvl - 1) / 10)) : 0, biomeBlend: 0,
-      level: lvl, goalDist: lvl ? Levels.goal(lvl) : 0, hits: 0, coinPicks: 0, finishCoins: false,
+      hacker, level: lvl, goalDist: hacker ? 1e9 : lvl ? Levels.goal(lvl) : 0, hits: 0, coinPicks: 0, finishCoins: false,
       tricks: 0, near: 0, maxCombo: 1, roofTime: 0, magnets: 0,
       camX: 0, camShakeX: 0, camShakeY: 0, lastMissionCheck: 0
     });
     goalZ = S.goalDist * UNITS_PER_M;
-    UI.setLevelHud(lvl ? { n: lvl, name: biome().name, season: season() } : null);
+    UI.setLevelHud(lvl ? (hacker ? { n: 'HACKER', name: 'HACKER', season: { name: 'HACKER' } } : { n: lvl, name: biome().name, season: season() }) : null);
     S.boards = Save.d.hoverboards + (S.perk.board ? 1 : 0);
     if (S.perk.shield) S.powers.shield = puDuration('shield');
     S.extraLife = S.perk.twohits ? 1 : 0;     // Ferrick: survive one extra lethal hit per run
@@ -487,7 +490,8 @@ const Game = (() => {
     patternCount = 0;
     generateAhead();
 
-    if (lvl) UI.toast(`LEVEL ${lvl} · ${biome().name} · ${season().name}`, 'gold');
+    if (hacker) UI.toast('HACKER · HACKER · HACKER', 'gold');
+    else if (lvl) UI.toast(`LEVEL ${lvl} · ${biome().name} · ${season().name}`, 'gold');
     UI.countdown(() => {
       S.mode = 'play';
       if (S.perk.twohits) UI.toast('Ferrick can take 2 hits!', 'good');
@@ -495,8 +499,15 @@ const Game = (() => {
   }
 
   function toMenu() {
+    /* no escape: leaving the HACKER level just drops you straight back into it */
+    if (S.hacker) {
+      S.mode = 'menu';
+      setTimeout(() => { RUN = { kind: 'level', level: 1, hacker: true }; start(); UI.toast('HACKER', 'bad'); }, 0);
+      return;
+    }
     S.mode = 'menu';
-    S.level = 0; S.biome = 0; S.biomeBlend = 0;
+    S.level = 0; S.biome = 0; S.biomeBlend = 0; S.hacker = false;
+    document.body.classList.remove('hacker');
     UI.el.hud.classList.add('hidden');
     UI.show('menu');
     UI.refreshStats();
@@ -579,7 +590,7 @@ const Game = (() => {
         score: Math.floor(S.score), coins: S.coins, dist: S.dist,
         maxCombo: S.maxCombo, near: S.near, tricks: S.tricks,
         biome: biome().name, record, mode: MODE.id, best,
-        level: S.level, levelPct: S.level ? Math.min(99, Math.floor(100 * S.dist / S.goalDist)) : 0,
+        level: S.level, levelPct: S.hacker ? Math.min(99, Math.floor(100 * (1 - 1 / (1 + S.dist / 400)))) : S.level ? Math.min(99, Math.floor(100 * S.dist / S.goalDist)) : 0,
         reviveCost: reviveCost(), canRevive: Save.d.coins >= reviveCost() && S.reviveCount < MODE.maxRevives
       });
       if (record) Sound.sfx.newRecord();
@@ -606,8 +617,9 @@ const Game = (() => {
     const stars = 1 + (gotCoins ? 1 : 0) + (clean ? 1 : 0);
 
     const { done, setDone } = settleRun();
-    const res = Levels.complete(MODE.id, lvl, stars);
-    const bonus = Math.round((20 + lvl * 4) * (.5 + .5 * stars) * MODE.coins * (res.first ? 1 : .25));
+    /* the secret hacker level never touches (freshly wiped) progress */
+    const res = S.hacker ? { first: false } : Levels.complete(MODE.id, lvl, stars);
+    const bonus = S.hacker ? 0 : Math.round((20 + lvl * 4) * (.5 + .5 * stars) * MODE.coins * (res.first ? 1 : .25));
     Save.addCoins(bonus);
 
     const runId = ++S.runId;
@@ -615,8 +627,8 @@ const Game = (() => {
       if (S.mode !== 'win' || S.runId !== runId) return;
       UI.levelComplete({
         level: lvl, mode: MODE.id, stars, gotCoins, clean, coinGoal, coinPicks: S.coinPicks,
-        coins: S.coins, bonus, score: Math.floor(S.score), map: biome().name, season: season(),
-        hasNext: lvl < Levels.COUNT, first: res.first,
+        coins: S.coins, bonus, score: Math.floor(S.score), map: biome().name, hacker: S.hacker, season: season(),
+        hasNext: !S.hacker && lvl < Levels.COUNT, first: res.first,
         nextMap: lvl < Levels.COUNT ? Levels.mapName(lvl + 1, MODE.id) : '',
         allDone: lvl >= Levels.COUNT
       });
@@ -1400,7 +1412,7 @@ const Game = (() => {
 
     if (S.mode === 'play' || S.mode === 'dead' || S.mode === 'countdown' || S.mode === 'win') {
       UI.hud({
-        levelPct: S.level ? U.clamp(S.dist / S.goalDist, 0, 1) : -1,
+        levelPct: S.hacker ? 1 - 1 / (1 + S.dist / 400) : S.level ? U.clamp(S.dist / S.goalDist, 0, 1) : -1,
         score: S.score, dist: S.dist, speed: S.speed * 0.09,
         coins: S.coins, multiplier: S.multiplier, boards: S.boards, onBoard: S.boardT > 0
       });
@@ -1455,10 +1467,24 @@ const Game = (() => {
     RUN = { kind: 'level', level: lvl };
     start();
   }
+  /* secret code "sweetala": wipe all progress, then drop into the HACKER level */
+  function playHacker() {
+    Save.reset();
+    RUN = { kind: 'level', level: 1, hacker: true };
+    start();
+  }
+  /* escape hatch: typing "imsorry" 20 times (see ui.js) frees you from the HACKER level */
+  function escapeHacker() {
+    if (!S.hacker) return false;
+    S.hacker = false;
+    RUN = { kind: 'level', level: Levels.current(Save.d.mode) };
+    toMenu();
+    return true;
+  }
   function playEndless() { RUN = { kind: 'endless', level: 0 }; start(); }
 
   const api = {
-    start, play, playLevel, playEndless, toMenu, togglePause, deployBoard, revive, boot,
+    start, play, playLevel, playHacker, escapeHacker, playEndless, toMenu, togglePause, deployBoard, revive, boot,
     get run() { return RUN; }, get season() { return season(); }, get state() { return S; }
   };
   return api;

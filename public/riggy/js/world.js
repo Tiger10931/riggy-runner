@@ -150,6 +150,18 @@ const World = (() => {
     winter: { id: 'winter', name: 'WINTER', color: '#bfe6ff', tint: '#eaf4fb', amt: .40, sky: '#cfe0ee', skyAmt: .34,
       leaf: ['#4f7f66', '#e8f1f7', '#7da08c'], weather: 'snow', sunScale: .85, force: true, snowCap: true }
   };
+  /* secret HACKER map (not part of BIOMES — only reachable via the secret code) */
+  const HACKER = {
+    id: 'hacker', baseId: 'hacker', name: 'HACKER', season: 'autumn',
+    sky: ['#000000', '#001a05', '#003b10'],
+    sun: null, cloudy: 0,
+    ground: '#02140a', groundAlt: '#041f0f', gravel: '#0a3a1a',
+    rail: '#00ff41', wall: '#031a0b',
+    fog: '#001a08', light: .7,
+    scenery: ['neonSign', 'billboard', 'neonSign', 'lamp', 'billboard'],
+    weather: null, dark: true, windows: true, backdrop: 'flat',
+    leaf: ['#00ff41'], snowCap: false, sunScale: 1
+  };
   const SEASON_ORDER = ['spring', 'summer', 'autumn', 'winter'];
 
   function seasonFromDate(d = new Date()) {
@@ -681,5 +693,5 @@ const World = (() => {
     ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
   }
 
-  return { LANE_W, LANES, BIOMES, SEASONS, SEASON_ORDER, seasonFromDate, currentSeason, resolveBiome, drawSky, drawBackdrop, drawGround, drawFog, drawScenery, drawWeather, drawSpeedLines, drawVignette };
+  return { LANE_W, LANES, BIOMES, HACKER, SEASONS, SEASON_ORDER, seasonFromDate, currentSeason, resolveBiome, drawSky, drawBackdrop, drawGround, drawFog, drawScenery, drawWeather, drawSpeedLines, drawVignette };
 })();
