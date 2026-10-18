@@ -142,6 +142,7 @@ const Riggy = (() => {
       muzzle: true, muzzleColor: '#fff7ec',
       foxEars: true, bushyTail: true,
       noShorts: true,
+      chest: '#2f6fe0', chestLo: '#1a3f96', chestHi: '#8ab2ff',
       sleeves: true, sleeveColor: '#2f6fe0', sleeveColorLo: '#1a3f96', sleeveColorHi: '#8ab2ff',
       pants: true, pantsColor: '#2c5f2d', pantsColorLo: '#173a18', pantsColorHi: '#5c9a52',
       pack: '#152a63', packLo: '#0c1a40', packOutline: '#080f22',
@@ -902,7 +903,11 @@ const Riggy = (() => {
     ctx.restore();
   }
 
-  function torso(ctx, j, skin) {
+  function torso(ctx, j, skinIn) {
+    // skins with a differently coloured chest (e.g. Ferrick's hoodie) swap just the torso colours
+    const skin = skinIn.chest
+      ? Object.assign({}, skinIn, { body: skinIn.chest, bodyLo: skinIn.chestLo, bodyHi: skinIn.chestHi })
+      : skinIn;
     // rounded chest -> waist silhouette instead of a flat slab
     ctx.beginPath();
     ctx.moveTo(-13, -116);
