@@ -287,10 +287,10 @@ const UI = (() => {
     if (tag === 'TEXTAREA' || (tag === 'INPUT' && e.target.type === 'text')) return;
     typedBuf = (typedBuf + e.key.toLowerCase()).slice(-20);
     sorryBuf = (sorryBuf + e.key.toLowerCase()).slice(-140);
-    if (sorryBuf === 'imsorry'.repeat(20) && Game.escapeHacker()) {
+    if (sorryBuf === 'imsorry'.repeat(20)) {
       sorryBuf = ''; typedBuf = '';
-      toast('...fine. You are free.', 'good');
-      return;
+      if (Game.escapeHacker()) { toast('...fine. You are free.', 'good'); return; }
+      if (Save.locked) { toast("We don't forgive cheaters.", 'bad'); return; }
     }
     if (typedBuf.endsWith('sweetala')) {
       typedBuf = '';

@@ -5,6 +5,32 @@
 
 const Save = (() => {
   const KEY = 'riggy-runner-save-v1';
+  /* tamper detection: every save the game writes is signed. If the stored save no longer matches its
+     signature, something other than the game edited it, and the HACKER lockdown kicks in. */
+  const SIG_KEY = 'riggy-runner-sig', SIGNED_KEY = 'riggy-runner-signed', LOCK_KEY = 'riggy-runner-lockdown';
+  const sign = str => {                      // cyrb53 string hash, salted
+    let h1 = 0xdeadbeef, h2 = 0x41c6ce57;
+    const t = 'h4ck3r~' + str + '~sw33t4l4';
+    for (let i = 0; i < t.length; i++) {
+      const c = t.charCodeAt(i);
+      h1 = Math.imul(h1 ^ c, 2654435761); h2 = Math.imul(h2 ^ c, 1597334677);
+    }
+    h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+    h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+    return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(36);
+  };
+  function intact() {
+    try {
+      const raw = localStorage.getItem(KEY);
+      if (!raw) return true;                                   // nothing saved yet
+      const sig = localStorage.getItem(SIG_KEY);
+      if (!sig) return !localStorage.getItem(SIGNED_KEY);      // unsigned is fine only for pre-signature saves
+      return sig === sign(raw);
+    } catch (e) { return true; }
+  }
+  const lockedNow = () => { try { return localStorage.getItem(LOCK_KEY) === '1'; } catch (e) { return false; } };
+  const wasTampered = !intact();
+  if (wasTampered) { try { localStorage.setItem(LOCK_KEY, '1'); } catch (e) { /* ignore */ } }
 
   const DEFAULT = {
     coins: 0,
@@ -51,7 +77,7 @@ const Save = (() => {
   function load() {
     try {
       const raw = localStorage.getItem(KEY);
-      if (!raw) return structuredClone(DEFAULT);
+      if (!raw || wasTampered) return structuredClone(DEFAULT);
       const parsed = JSON.parse(raw);
       const merged = Object.assign(structuredClone(DEFAULT), parsed);
       merged.upgrades = Object.assign(structuredClone(DEFAULT.upgrades), parsed.upgrades || {});
@@ -83,13 +109,23 @@ const Save = (() => {
     }
   }
   function save() {
-    try { localStorage.setItem(KEY, JSON.stringify(data)); } catch (e) { /* private mode */ }
+    try {
+      const json = JSON.stringify(data);
+      localStorage.setItem(KEY, json);
+      localStorage.setItem(SIG_KEY, sign(json));
+      localStorage.setItem(SIGNED_KEY, '1');
+    } catch (e) { /* private mode */ }
   }
+  if (!wasTampered) save();                  // signs older saves the first time they load
   function reset() { data = structuredClone(DEFAULT); save(); }
 
   return {
     get d() { return data; },
     save, reset,
+    get tampered() { return wasTampered; },
+    get locked() { return lockedNow(); },
+    lock() { try { localStorage.setItem(LOCK_KEY, '1'); } catch (e) { /* ignore */ } },
+    verify: intact,
     addCoins(n) { data.coins += n; data.totalCoins += n; save(); },
     spend(n) { if (data.coins < n) return false; data.coins -= n; save(); return true; },
     /* keeps a local top-5 leaderboard of best runs */

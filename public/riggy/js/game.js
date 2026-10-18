@@ -1459,6 +1459,9 @@ const Game = (() => {
       }, 16);
     })();
     requestAnimationFrame(frame);
+    /* tamper watch: on load, and whenever the stored save stops matching its signature */
+    if (Save.tampered || Save.locked) setTimeout(tamperLockdown, 300);
+    setInterval(() => { if (!Save.verify()) tamperLockdown(); }, 1500);
   }
 
   function play() { RUN = { kind: 'level', level: Levels.current(Save.d.mode) }; start(); }
@@ -1475,11 +1478,18 @@ const Game = (() => {
   }
   /* escape hatch: typing "imsorry" 20 times (see ui.js) frees you from the HACKER level */
   function escapeHacker() {
-    if (!S.hacker) return false;
+    if (!S.hacker || Save.locked) return false;      // tampering locks the escape code for good
     S.hacker = false;
     RUN = { kind: 'level', level: Levels.current(Save.d.mode) };
     toMenu();
     return true;
+  }
+  /* the save was edited by something other than the game: lock the escape code and trap the player */
+  function tamperLockdown() {
+    Save.lock();
+    if (S.hacker && RUN.hacker) return;
+    playHacker();
+    UI.toast("We don't forgive cheaters.", 'bad');
   }
   function playEndless() { RUN = { kind: 'endless', level: 0 }; start(); }
 
