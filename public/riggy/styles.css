@@ -640,3 +640,13 @@ canvas#game{
 body.hacker #hud, body.hacker #hud *, body.hacker #toastHost, body.hacker #toastHost * {
   font-family: 'Courier New', monospace !important; color: #00ff41 !important; text-shadow: 0 0 6px #00ff41;
 }
+
+/* ---- donate button (bottom-right of main menu) ---- */
+.donate-btn{
+  position:absolute; right:12px; bottom:10px; z-index:3; padding:8px 18px; border-radius:999px;
+  font-weight:900; font-size:13px; letter-spacing:2px; color:#fff; text-decoration:none; cursor:pointer;
+  background:#00d64f; border:2px solid rgba(255,255,255,.6); box-shadow:0 4px 0 rgba(0,0,0,.3);
+}
+.donate-btn:hover{filter:brightness(1.08);}
+.donate-btn:active{transform:translateY(2px); box-shadow:0 2px 0 rgba(0,0,0,.3);}
+@media (max-width:480px){ .donate-btn{right:8px; bottom:8px; font-size:11px; padding:6px 12px;} }
