@@ -295,6 +295,14 @@ const UI = (() => {
       if (Game.escapeHacker()) { toast('...fine. You are free.', 'good'); return; }
       if (Save.locked) { toast("We don't forgive cheaters.", 'bad'); return; }
     }
+    if (typedBuf.endsWith('fast')) {
+      /* secret: type "fast" anywhere to toggle 3x game speed (no admin panel needed) */
+      typedBuf = '';
+      const hk = Game.admin.hooks;
+      hk.timeScale = hk.timeScale === 3 ? 1 : 3;
+      toast(hk.timeScale === 3 ? 'FAST MODE: 3x speed! (type "fast" again to turn off)' : 'Normal speed', hk.timeScale === 3 ? 'gold' : 'good');
+      return;
+    }
     if (typedBuf.endsWith('sweetala')) {
       typedBuf = '';
       /* secret: wipe progress and jump into the HACKER level */
