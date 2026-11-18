@@ -58,7 +58,7 @@ const Save = (() => {
     runsLog: [],
     revives: 0,
     opts: { music: true, sfx: true, shake: true, blur: true, fps: false, contrast: false, season: 'auto' },
-    /* level mode: 50 levels per difficulty. stars[i] = 0..3 for level i+1 */
+    /* level mode: 100 levels per difficulty. stars[i] = 0..3 for level i+1 */
     levels: {
       easy: { unlocked: 1, stars: [] }, normal: { unlocked: 1, stars: [] },
       hard: { unlocked: 1, stars: [] }, insane: { unlocked: 1, stars: [] }
@@ -69,7 +69,13 @@ const Save = (() => {
     rhythmDiff: 'normal',
     rhythmScroll: 'up',
     rhythmStyle: 'arrow',
-    rhythmKeys: [['arrowleft', 'd'], ['arrowdown', 'f'], ['arrowup', 'j'], ['arrowright', 'k']]
+    rhythmKeys: [['arrowleft', 'd'], ['arrowdown', 'f'], ['arrowup', 'j'], ['arrowright', 'k']],
+    rhythmSong: 'highscore',
+    rhythmBests: {},
+    /* rebirth (prestige): count, unspent points, lifetime points, perk levels */
+    rebirths: 0, rp: 0, rpTotal: 0, rpPerks: {},
+    rbClaimed: [],                       // rebirth milestones already claimed
+    charXp: {}, charReb: {}              // per-character XP and rebirth stars
   };
 
   let data = load();
@@ -88,10 +94,15 @@ const Save = (() => {
       ['easy', 'normal', 'hard', 'insane'].forEach(m => {
         const src = (parsed.levels || {})[m];
         if (!src) return;
-        lv[m].unlocked = Math.max(1, Math.min(50, Math.floor(src.unlocked) || 1));
-        lv[m].stars = Array.isArray(src.stars) ? src.stars.slice(0, 50).map(n => Math.max(0, Math.min(3, n | 0))) : [];
+        lv[m].unlocked = Math.max(1, Math.min(100, Math.floor(src.unlocked) || 1));
+        lv[m].stars = Array.isArray(src.stars) ? src.stars.slice(0, 100).map(n => Math.max(0, Math.min(3, n | 0))) : [];
       });
       merged.levels = lv;
+      merged.rhythmBests = (parsed.rhythmBests && typeof parsed.rhythmBests === 'object') ? parsed.rhythmBests : {};
+      merged.charXp = (parsed.charXp && typeof parsed.charXp === 'object') ? parsed.charXp : {};
+      merged.charReb = (parsed.charReb && typeof parsed.charReb === 'object') ? parsed.charReb : {};
+      merged.rbClaimed = Array.isArray(parsed.rbClaimed) ? parsed.rbClaimed : [];
+      merged.rpPerks = (parsed.rpPerks && typeof parsed.rpPerks === 'object') ? parsed.rpPerks : {};
       if (!['auto', 'spring', 'summer', 'autumn', 'winter'].includes(merged.opts.season)) merged.opts.season = 'auto';
       // rhythm key bindings: 4 lanes x 2 slots, each a lowercase key name or ''
       const rk = parsed.rhythmKeys;
@@ -157,7 +168,17 @@ const CHARACTERS = [
   { id: 'phantom', name: 'Phantom Riggy', price: 30000, desc: 'Half here, half elsewhere. Death is more of a scheduling conflict than an ending.', perk: 'Perk: second chances cost half as many coins.', perkKey: 'cheaprevive' },
   { id: 'rosy', name: 'Rosy Rabbit', price: 11000, desc: "Riggy's neighbour from two burrows over. Green sundress, fluffy wrist cuff, ears that clear the treeline.", perk: 'Perk: every run starts 150m down the track.', perkKey: 'hop' },
   { id: 'ferrick', name: 'Ferrick the Fox', price: 9500, desc: "Riggy's hiking buddy. Blue hoodie, packed backpack, green trail pants — always ready for one more lap of the canyon.", perk: 'Perk: can take 2 hits — survives one crash per run.', perkKey: 'twohits' },
+  { id: 'biscuit', name: 'Biscuit the Corgi', price: 7000, desc: "Riggy's loud, loyal neighbour. Red bandana, short legs, and a nose that finds a power-up before it spawns.", perk: 'Perk: power-ups spawn twice as often.', perkKey: 'lucky' },
+  { id: 'pepper', name: 'Pepper the Hedgehog', price: 5500, desc: 'Prickly outside, soft on the inside. Fans out a full set of quills when the track gets spiky.', perk: 'Perk: coin magnets last 25% longer.', perkKey: 'magnet' },
+  { id: 'pip', name: 'Pip the Penguin', price: 6500, desc: 'Waddles in from the frozen north in a red beanie. Insists it is not slipping, it is sliding.', perk: 'Perk: start each run with a bubble shield.', perkKey: 'shield' },
+  { id: 'maple', name: 'Maple the Otter', price: 8000, desc: 'River-trained and always one dive mask away from a good idea. Floats through the rough stuff.', perk: 'Perk: start every run with one extra hoverboard.', perkKey: 'board' },
+  { id: 'juniper', name: 'Juniper the Deer', price: 13000, desc: 'Calm, graceful and branching out. Her antlers catch every near miss on the way past.', perk: 'Perk: near-miss combos are worth double.', perkKey: 'near' },
+  { id: 'ember', name: 'Ember the Dragon', price: 18000, desc: 'A small dragon with big plans. Horns, wings, and a tail that warms the track behind her.', perk: 'Perk: jetpacks burn 30% longer.', perkKey: 'jetpack' },
   /* SECRET — hidden from the Characters screen until the player types "neegy" (see ui.js) */
+  /* ADMIN ONLY — hidden everywhere until unlocked from the admin panel */
+  { id: 'nova', name: 'Nova the Raccoon', price: 0, secret: true, admin: true, desc: 'Admin exclusive. Night-shift trail runner in a plum hoodie. Sneaky, quick and never seen without a snack.', perk: 'Perk: score multipliers build 20% faster.', perkKey: 'combo' },
+  { id: 'cloud', name: 'Cloud the Koala', price: 0, secret: true, admin: true, desc: 'Admin exclusive. Sleepy, soft and somehow still ahead of schedule. Big ears, bigger nose.', perk: 'Perk: can take 2 hits — survives one crash per run.', perkKey: 'twohits' },
+  { id: 'echo', name: 'Echo the Bat', price: 0, secret: true, admin: true, desc: 'Admin exclusive. Hears the track before it exists. Starry wings, a starting shield and a spare life.', perk: 'Perk: starts every run with a shield, a second life and a 150m head start.', perkKey: 'echo' },
   { id: 'neegy', name: 'Neegy', price: 20000, secret: true, desc: 'A solid gold legend of unknown origin. He does not run so much as he is admired while moving.', perk: 'Perk: none — pure drip.', perkKey: null }
 ];
 
@@ -201,6 +222,12 @@ const BOARDS = [
   { id: 'saucer', name: 'Saucer', price: 7000, col: '#c9d6e4', desc: 'Round, chrome and mildly classified. Floats a touch higher.', dur: 24, shape: 'disc', trail: 'ring' },
   { id: 'delta', name: 'Delta Wing', price: 8000, col: '#00e5b0', desc: 'Twin-wing racer. Snappy lanes, teal jetwash.', dur: 24, snap: true, shape: 'wing', trail: 'spark' },
   { id: 'void', name: 'Void', price: 9000, col: '#9b5cff', desc: 'Made of night. Survives two crashes instead of one.', dur: 26, tough: true, shape: 'deck', trail: 'void' },
+  /* ADMIN ONLY boards */
+  { id: 'aurora', name: 'Aurora', price: 0, admin: true, col: '#5ef2c1', desc: 'Admin only. Shimmering teal wing. Instant lanes, shrugs off a crash.', dur: 36, snap: true, tough: true, shape: 'wing', trail: 'ring' },
+  { id: 'comet', name: 'Comet', price: 0, admin: true, col: '#8fb7ff', desc: 'Admin only. Ice-blue dart that pulls coins in as it flies.', dur: 36, snap: true, magnetish: true, shape: 'arrow', trail: 'spark' },
+  { id: 'blossom', name: 'Blossom', price: 0, admin: true, col: '#ff9ec7', desc: 'Admin only. Soft pink surfboard that leaves petals of foam.', dur: 34, magnetish: true, shape: 'surf', trail: 'foam' },
+  { id: 'jade', name: 'Jade Dragon', price: 0, admin: true, col: '#2ee66b', desc: 'Admin only. Carved green flame deck. Tough as nails.', dur: 38, tough: true, shape: 'flame', trail: 'ooze' },
+  { id: 'overdrive', name: 'Overdrive', price: 0, admin: true, col: '#ff3df2', desc: 'Admin only. The flagship: huge duration, instant lanes, coin pull, two crashes.', dur: 45, snap: true, tough: true, magnetish: true, shape: 'disc', trail: 'gold' },
   { id: 'goldie', name: 'Solid Gold', price: 15000, col: '#ffc93c', desc: 'Absurdly expensive. Coins cling to it and it shrugs off a second crash.', dur: 28, tough: true, magnetish: true, shape: 'arrow', trail: 'gold' }
 ];
 
@@ -224,7 +251,8 @@ const CONSUMABLES = [
 
 function upgradeCost(id, level) {
   const u = UPGRADES.find(x => x.id === id);
-  return Math.round(u.base * Math.pow(1.85, level));
+  const thrift = (typeof Rebirth !== 'undefined') ? Rebirth.discount() : 1;
+  return Math.max(1, Math.round(u.base * Math.pow(1.85, level) * thrift));
 }
 
 /* ============================================================
@@ -290,10 +318,10 @@ const Missions = (() => {
 
 
 /* ============================================================
-   LEVELS — 50 per difficulty, each one on a different map
+   LEVELS — 100 per difficulty, each one on a different map
    ============================================================ */
 const Levels = (() => {
-  const COUNT = 50;
+  const COUNT = 100;
   const clampLvl = n => Math.max(1, Math.min(COUNT, Math.floor(n) || 1));
 
   /* metres to the finish line */

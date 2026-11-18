@@ -11,7 +11,7 @@ const UI = (() => {
   const el = {
     hud: $('#hud'), menu: $('#menu'), characters: $('#characters'), shop: $('#shop'),
     missions: $('#missions'), how: $('#how'), credits: $('#credits'), settings: $('#settings'),
-    levels: $('#levels'), levelcomplete: $('#levelcomplete'),
+    levels: $('#levels'), rebirth: $('#rebirth'), levelcomplete: $('#levelcomplete'),
     levelHud: $('#levelHud'), hlName: $('#hlName'), hlSeason: $('#hlSeason'), hlFill: $('#hlFill'),
     pause: $('#pause'), gameover: $('#gameover'), countdown: $('#countdown'),
     score: $('#scoreValue'), dist: $('#distValue'), speed: $('#speedValue'),
@@ -30,7 +30,7 @@ const UI = (() => {
     ['menu', 'characters', 'shop', 'missions', 'how', 'settings', 'levels', 'pause', 'gameover', 'levelcomplete'].forEach(k => el[k].classList.add('hidden'));
     if (name) el[name].classList.remove('hidden');
   }
-  function hideAllSheets() { ['characters', 'shop', 'missions', 'how', 'credits', 'settings', 'levels'].forEach(k => el[k].classList.add('hidden')); }
+  function hideAllSheets() { ['characters', 'shop', 'missions', 'how', 'credits', 'settings', 'levels', 'rebirth'].forEach(k => el[k].classList.add('hidden')); }
 
   function toast(msg, kind = '') {
     const d = document.createElement('div');
@@ -109,6 +109,7 @@ const UI = (() => {
     $('#playBtn').textContent = Levels.unlocked(d.mode) >= Levels.COUNT && Levels.starsFor(d.mode, Levels.COUNT) > 0 ? 'PLAY · LEVEL ' + Levels.COUNT : 'PLAY · LEVEL ' + lvl;
     paintSeason();
     if (typeof Rhythm !== 'undefined') Rhythm.refreshButton();
+    if (typeof Rebirth !== 'undefined') Rebirth.refreshButton();
   }
 
   /* ---------------- seasons ---------------- */
@@ -186,7 +187,7 @@ const UI = (() => {
       show('levelcomplete');
       return;
     }
-    $('#lcRibbon').textContent = r.allDone ? 'ALL 50 LEVELS CLEARED!' : `LEVEL ${r.level} COMPLETE`;
+    $('#lcRibbon').textContent = r.allDone ? `ALL ${Levels.COUNT} LEVELS CLEARED!` : `LEVEL ${r.level} COMPLETE`;
     $('#lcStars').innerHTML = starStr(r.stars);
     $('#lcSub').textContent = `${rm.name} · ${r.map} · ${r.season.name}` + (r.hasNext ? ` — next up: ${r.nextMap}` : '');
     $('#lcCoins').textContent = U.fmt(r.coins);
@@ -233,6 +234,7 @@ const UI = (() => {
       card.className = 'char-card' + (Save.d.character === c.id ? ' active' : '');
       card.innerHTML = `<canvas width="220" height="200"></canvas>
         <div class="card-name">${c.name.toUpperCase()}</div>
+        ${owned ? `<div class="card-lv">LV ${CharLv.info(c.id).level} <span>${CharLv.stars(c.id)}</span></div>` : ''}
         ${owned ? `<div class="card-owned">${Save.d.character === c.id ? 'EQUIPPED' : 'OWNED'}</div>`
           : `<div class="card-price">${U.fmt(c.price)} coins</div>`}
         ${owned ? '' : '<div class="card-lock">&#128274;</div>'}`;
@@ -254,6 +256,7 @@ const UI = (() => {
     $('#charDesc').textContent = c.desc;
     $('#charPerk').textContent = c.perk;
     const owned = Save.d.owned.includes(c.id);
+    CharLv.panel(c.id);
     const btn = $('#charAction');
     if (Save.d.character === c.id) { btn.textContent = 'EQUIPPED'; btn.disabled = true; btn.style.filter = 'grayscale(.6)'; }
     else if (owned) { btn.textContent = 'SELECT'; btn.disabled = false; btn.style.filter = ''; }
@@ -307,7 +310,7 @@ const UI = (() => {
       MODE_ORDER.forEach(m => { Save.d.levels[m].unlocked = Levels.COUNT; });
       Save.save();
       Sound.sfx.buy();
-      toast('CHEAT UNLOCKED — all 50 levels on every difficulty!', 'gold');
+      toast('CHEAT UNLOCKED — all levels on every difficulty!', 'gold');
       refreshStats();
       if (!el.levels.classList.contains('hidden')) buildLevels();
     }
@@ -339,7 +342,7 @@ const UI = (() => {
         grid.appendChild(card);
       });
     } else if (shopTab === 'boards') {
-      BOARDS.forEach(b => {
+      BOARDS.filter(b => !b.admin || Save.d.ownedBoards.includes(b.id)).forEach(b => {
         const owned = Save.d.ownedBoards.includes(b.id);
         const equipped = Save.d.board === b.id;
         const card = document.createElement('div');
@@ -569,6 +572,7 @@ const UI = (() => {
     nav($('#shopBtn'), () => { buildShop(); el.shop.classList.remove('hidden'); refreshStats(); });
     nav($('#missionsBtn'), () => { buildMissions(); el.missions.classList.remove('hidden'); refreshStats(); });
     nav($('#rhythmBtn'), () => Rhythm.open());
+    nav($('#rebirthBtn'), () => { Rebirth.build(); el.rebirth.classList.remove('hidden'); refreshStats(); });
     nav($('#howBtn'), () => el.how.classList.remove('hidden'));
     nav($('#creditsBtn'), () => el.credits.classList.remove('hidden'));
     nav($('#settingsBtn'), () => { bindSettings(); el.settings.classList.remove('hidden'); });

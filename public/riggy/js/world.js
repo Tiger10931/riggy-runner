@@ -132,6 +132,96 @@ const World = (() => {
       fog: '#0e1838', light: .6,
       scenery: ['pipe', 'neonSign', 'grate', 'crystal'],
       weather: null, dark: true, indoor: true, backdrop: 'flat'
+    },
+    {
+      id: 'candy', name: 'Candy Meadow',
+      sky: ['#ff9ad5', '#ffc8ea', '#fff0fa'],
+      sun: '#fffbe0', sunY: .22, cloudy: .7,
+      ground: '#d98ac4', groundAlt: '#cf7fbb', gravel: '#f0a9dc',
+      rail: '#fff3b0', wall: '#b86aa5',
+      fog: '#ffd6f0', light: 1.05,
+      scenery: ['lantern', 'tree', 'lantern', 'crystal', 'lamp'],
+      weather: null, backdrop: 'hills'
+    },
+    {
+      id: 'cherry', name: 'Blossom Lane',
+      sky: ['#ffb3c7', '#ffd9e3', '#fff5f8'],
+      sun: '#fff6d6', sunY: .26, cloudy: .55,
+      ground: '#8f7782', groundAlt: '#846c77', gravel: '#b39aa5',
+      rail: '#ffe4ec', wall: '#9a7a89',
+      fog: '#ffe0ea', light: 1,
+      scenery: ['tree', 'lantern', 'tree', 'lamp', 'tree'],
+      weather: 'leaves', backdrop: 'hills'
+    },
+    {
+      id: 'swamp', name: 'Misty Bayou',
+      sky: ['#2f4a3f', '#587a64', '#9cc2a4'],
+      sun: '#e8f5c8', sunY: .34, cloudy: .8,
+      ground: '#4d5a3c', groundAlt: '#445035', gravel: '#66744f',
+      rail: '#b9c48a', wall: '#3a4a33',
+      fog: '#7fa088', light: .8,
+      scenery: ['tree', 'rock', 'tree', 'palm', 'lamp'],
+      weather: 'rain', backdrop: 'hills'
+    },
+    {
+      id: 'savanna', name: 'Golden Savanna',
+      sky: ['#ff9a3c', '#ffc864', '#fff0b8'],
+      sun: '#fff7d0', sunY: .3, cloudy: .2,
+      ground: '#b9894a', groundAlt: '#ad7e42', gravel: '#d6a968',
+      rail: '#f5deae', wall: '#946332',
+      fog: '#ffd9a0', light: 1.08,
+      scenery: ['palm', 'rock', 'mesa', 'tree', 'cactus'],
+      weather: 'dust', backdrop: 'hills'
+    },
+    {
+      id: 'aurora', name: 'Aurora Pass',
+      sky: ['#04122b', '#0d3a4f', '#1f7a6e'],
+      sun: null, cloudy: .2,
+      ground: '#9fb8c9', groundAlt: '#93adbf', gravel: '#bdd2df',
+      rail: '#7dffcf', wall: '#6f8ea5',
+      fog: '#14425a', light: .78,
+      scenery: ['pine', 'pine', 'crystal', 'rock', 'lamp'],
+      weather: 'snow', dark: true, backdrop: 'hills', snowCap: true
+    },
+    {
+      id: 'rooftop', name: 'Skyline Rooftops',
+      sky: ['#1a2a6c', '#b21f1f', '#fdbb2d'],
+      sun: '#ffe9a8', sunY: .42, cloudy: .35,
+      ground: '#5a5f6e', groundAlt: '#505563', gravel: '#747a8c',
+      rail: '#ffd37a', wall: '#464b5c',
+      fog: '#e0884a', light: .9,
+      scenery: ['building', 'billboard', 'building', 'lamp', 'neonSign'],
+      weather: null, windows: true
+    },
+    {
+      id: 'reef', name: 'Coral Reef',
+      sky: ['#0a4a8a', '#1b8fc4', '#7fe0e8'],
+      sun: '#e8ffff', sunY: .16, cloudy: .1,
+      ground: '#c9b58a', groundAlt: '#bda97f', gravel: '#e0cfa6',
+      rail: '#ffa3a3', wall: '#2f7a9c',
+      fog: '#4fb8d8', light: .95,
+      scenery: ['crystal', 'palm', 'rock', 'crystal', 'lantern'],
+      weather: null, backdrop: 'hills'
+    },
+    {
+      id: 'moonbase', name: 'Moonbase Alpha',
+      sky: ['#000000', '#0b0d1a', '#1a1d33'],
+      sun: '#ffffff', sunY: .12, cloudy: 0,
+      ground: '#8a8d96', groundAlt: '#80838c', gravel: '#a3a6af',
+      rail: '#9fd6ff', wall: '#5d6070',
+      fog: '#0b0d1a', light: .85,
+      scenery: ['rock', 'pipe', 'crystal', 'grate', 'rock'],
+      weather: null, dark: true, backdrop: 'hills'
+    },
+    {
+      id: 'casino', name: 'Gold Rush Strip',
+      sky: ['#1a0a00', '#4a2a00', '#b8860b'],
+      sun: null, cloudy: .1,
+      ground: '#4a3a1c', groundAlt: '#403116', gravel: '#66522a',
+      rail: '#ffd23f', wall: '#5a4416',
+      fog: '#7a5a14', light: .78,
+      scenery: ['neonSign', 'lantern', 'billboard', 'neonSign', 'lamp'],
+      weather: 'spark', dark: true, windows: true
     }
   ];
 

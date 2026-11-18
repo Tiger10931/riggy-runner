@@ -150,6 +150,115 @@ const Riggy = (() => {
     }
   };
 
+  /* admin-only originals (unlocked from the admin panel) */
+  SKINS.nova = {
+    name: 'Nova the Raccoon',
+    body: '#9aa3b5', bodyLo: '#5f6778', bodyHi: '#dde3ee',
+    shorts: '#2a2f3a', shortsLo: '#14171d',
+    glove: '#2b303b', shoe: '#2b303b', shoeLo: '#14171d',
+    eye: '#ffffff', pupil: '#14171d', outline: '#141821',
+    mask: '#2b303b', tailTip: '#2b303b',
+    muzzle: true, muzzleColor: '#eef1f7',
+    roundEars: true, bushyTail: true, noShorts: true,
+    chest: '#7a4de0', chestLo: '#4b2aa3', chestHi: '#b79cff',
+    sleeves: true, sleeveColor: '#7a4de0', sleeveColorLo: '#4b2aa3', sleeveColorHi: '#b79cff',
+    pants: true, pantsColor: '#2e3446', pantsColorLo: '#171b27', pantsColorHi: '#566080',
+    accessories: ['hoodCollar']
+  };
+  SKINS.cloud = {
+    name: 'Cloud the Koala',
+    body: '#a9b4d6', bodyLo: '#6f7ba6', bodyHi: '#e8ecff',
+    shorts: '#2fb89a', shortsLo: '#1b7a65',
+    glove: '#ffffff', shoe: '#ffffff', shoeLo: '#cfd6ea',
+    eye: '#ffffff', pupil: '#1c2340', outline: '#1c2340',
+    muzzle: true, muzzleColor: '#eef1ff',
+    roundEars: true, earSize: 1.7, earX: .9, roundTail: true,
+    accessories: ['bignose']
+  };
+
+  SKINS.biscuit = {
+    name: 'Biscuit the Corgi',
+    body: '#d99a4e', bodyLo: '#9a6122', bodyHi: '#ffd9a0',
+    shorts: '#2f7de1', shortsLo: '#184a9c',
+    glove: '#fff8ee', shoe: '#fff8ee', shoeLo: '#d8cdb8',
+    eye: '#ffffff', pupil: '#2a1708', outline: '#2a1708',
+    muzzle: true, muzzleColor: '#fff8ee',
+    foxEars: true, roundTail: true,
+    accent: '#e5262b',
+    accessories: ['bandana']
+  };
+
+  /* five more unlockable originals */
+  SKINS.pepper = {
+    name: 'Pepper the Hedgehog',
+    body: '#b98a62', bodyLo: '#7d5833', bodyHi: '#f0cfa6',
+    shorts: '#e0502f', shortsLo: '#9c2f16',
+    noShorts: true, pants: true, pantsColor: '#3b4a78', pantsColorLo: '#222c4d', pantsColorHi: '#6f82bd',
+    glove: '#fff1de', shoe: '#e0502f', shoeLo: '#9c2f16',
+    eye: '#ffffff', pupil: '#25140a', outline: '#25140a',
+    muzzle: true, muzzleColor: '#fff1de',
+    roundEars: true, tailStyle: 'hedgehog',
+    quill: '#6b4222', quillHi: '#9a643a',
+    accessories: ['quills']
+  };
+  SKINS.maple = {
+    name: 'Maple the Otter',
+    body: '#8a6a52', bodyLo: '#5a4030', bodyHi: '#c9a98a',
+    shorts: '#1fb5a5', shortsLo: '#0f776d',
+    noShorts: true, pants: true, pantsColor: '#1fb5a5', pantsColorLo: '#0f776d', pantsColorHi: '#6fe0d2',
+    glove: '#f3e3cf', shoe: '#f3e3cf', shoeLo: '#cdb79c',
+    eye: '#ffffff', pupil: '#1d120a', outline: '#1d120a',
+    muzzle: true, muzzleColor: '#f3e3cf',
+    roundEars: true, earSize: .85, tailStyle: 'otter',
+    accessories: ['snorkel']
+  };
+  SKINS.juniper = {
+    name: 'Juniper the Deer',
+    body: '#c98a4b', bodyLo: '#8d5a28', bodyHi: '#f3c791',
+    shorts: '#3f9b57', shortsLo: '#256a38',
+    noShorts: true, pants: true, pantsColor: '#4d6b3a', pantsColorLo: '#2e4423', pantsColorHi: '#86a86a',
+    glove: '#fff4e2', shoe: '#fff4e2', shoeLo: '#d9c9ac',
+    eye: '#ffffff', pupil: '#2b1707', outline: '#2b1707',
+    muzzle: true, muzzleColor: '#fff4e2',
+    roundEars: true, earStyle: 'deer', tailStyle: 'deer',
+    antler: '#d8a96a',
+    accessories: ['antlers']
+  };
+  SKINS.pip = {
+    name: 'Pip the Penguin',
+    body: '#27324f', bodyLo: '#141b30', bodyHi: '#5b6c9c',
+    shorts: '#ff9f2e', shortsLo: '#b9650c',
+    glove: '#27324f', shoe: '#ff9f2e', shoeLo: '#b9650c',
+    eye: '#ffffff', pupil: '#0b0f1c', outline: '#0b0f1c',
+    muzzle: true, muzzleColor: '#f6f9ff',
+    roundEars: true, earSize: .6, tailStyle: 'penguin',
+    beanie: '#e8483f', beanieBand: '#ffffff',
+    accessories: ['beanie']
+  };
+  SKINS.ember = {
+    name: 'Ember the Dragon',
+    body: '#e2573a', bodyLo: '#9c2f1c', bodyHi: '#ff9a6b',
+    shorts: '#3b2a52', shortsLo: '#1f1430',
+    glove: '#ffd27a', shoe: '#ffd27a', shoeLo: '#c8963a',
+    eye: '#ffe14a', pupil: '#2a0f08', outline: '#2a0f08',
+    muzzle: true, muzzleColor: '#ffd27a',
+    roundEars: true, earSize: .5, bushyTail: true, tailTip: '#ffd27a',
+    horn: '#ffe9b0', wing: '#f08a3a', wingLo: '#9c4a14',
+    accessories: ['wings', 'horns']
+  };
+  /* admin-only: Echo the Bat */
+  SKINS.echo = {
+    name: 'Echo the Bat',
+    body: '#3a2f7a', bodyLo: '#221a52', bodyHi: '#8c7ce8',
+    shorts: '#12102a', shortsLo: '#07061a',
+    glove: '#d9d2ff', shoe: '#d9d2ff', shoeLo: '#a79ee0',
+    eye: '#ffe14a', pupil: '#1a1033', outline: '#0d0a22',
+    glow: '#a78bff', sparkle: true,
+    foxEars: true, flatTail: true,
+    wing: '#5a49b8', wingLo: '#2f2670',
+    accessories: ['wings']
+  };
+
   /* ---------------------------------------------------------
      NEEGY — secret character drawn from a sprite image instead of
      the procedural rig. Falls back to a gold rig until it loads.
@@ -811,6 +920,47 @@ const Riggy = (() => {
     ctx.restore();
   }
 
+  /* species tails for the newer originals: otter rudder, penguin tail feathers, deer flag */
+  function styledTail(ctx, skin, style, wag = 0, s = 1) {
+    ctx.save(); ctx.scale(s, s);
+    if (style === 'otter') {
+      ctx.rotate(wag * .4);
+      ctx.beginPath();
+      ctx.moveTo(2, -9); ctx.quadraticCurveTo(-26, -12, -50, 4); ctx.quadraticCurveTo(-54, 12, -46, 14);
+      ctx.quadraticCurveTo(-22, 12, 2, 10); ctx.closePath();
+      U.ink(ctx, skin.body, 4.5, skin.outline);
+      ctx.beginPath(); ctx.moveTo(-6, 4); ctx.quadraticCurveTo(-26, 2, -44, 8);
+      ctx.strokeStyle = U.rgba(skin.bodyHi, .8); ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.stroke();
+    } else if (style === 'penguin') {
+      [-.5, 0, .5].forEach((a, i) => {
+        ctx.save(); ctx.rotate(Math.PI + a + wag * .3 * (i - 1));
+        U.poly(ctx, [[0, -9], [38 - Math.abs(a) * 14, 0], [0, 9]]);
+        U.ink(ctx, i === 1 ? skin.bodyHi : skin.body, 4, skin.outline);
+        ctx.restore();
+      });
+    } else if (style === 'hedgehog') {
+      ctx.translate(-8, 4); ctx.scale(1.7, 1.7); ctx.rotate(.35 + wag * .3);
+      U.poly(ctx, [[2, -8], [-8, -13], [-14, -7], [-23, -9], [-26, -1], [-34, 2], [-26, 6], [-24, 12], [-14, 9], [-8, 14], [2, 9]]);
+      U.ink(ctx, skin.quill || '#6b4222', 4, skin.outline);
+      U.ellipse(ctx, -4, 0, 6, 7); ctx.fillStyle = U.rgba(skin.bodyHi, .85); ctx.fill();
+    } else if (style === 'deer') {
+      ctx.rotate(-.7 + wag * .3);
+      U.ellipse(ctx, -10, 0, 17, 10);
+      U.ink(ctx, skin.body, 4.5, skin.outline);
+      U.ellipse(ctx, -12, 3, 11, 5.5);
+      ctx.fillStyle = '#fff8ea'; ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  function deerEars(ctx, r, skin) {
+    [-1, 1].forEach(sg => {
+      ctx.save(); ctx.translate(sg * r * .86, -r * .52); ctx.rotate(sg * .95);
+      U.ellipse(ctx, 0, -14, 10, 24); U.ink(ctx, skin.body, 5, skin.outline);
+      U.ellipse(ctx, 0, -12, 5, 16); ctx.fillStyle = U.rgba('#fff4e2', .9); ctx.fill();
+      ctx.restore();
+    });
+  }
   function fluffTail(ctx, skin, s = 1) {
     // small round fluffy tail (bunny-style), used instead of the long kinked tail
     ctx.save();
@@ -986,6 +1136,19 @@ const Riggy = (() => {
     const ex = [cx - eyeGap * (1 - Math.abs(turn) * .28), cx + eyeGap * (1 + Math.abs(turn) * .06)];
     const eyeRX = r * .17, eyeRY = r * .30;
 
+    // eye mask (opt-in, e.g. Nova)
+    if (skin.mask) {
+      ctx.save();
+      U.ellipse(ctx, 0, 0, r, r * .98); ctx.clip();
+      U.roundRect(ctx, ex[0] - r * .1, eyeY - r * .13, ex[1] - ex[0] + r * .2, r * .26, r * .12);
+      ctx.fillStyle = skin.mask; ctx.fill();
+      [0, 1].forEach(i => {
+        U.ellipse(ctx, ex[i] + (i ? 1 : -1) * r * .05, eyeY + r * .02, r * .27, r * .36);
+        ctx.fillStyle = skin.mask; ctx.fill();
+      });
+      ctx.restore();
+    }
+
     // brows
     for (let i = 0; i < 2; i++) {
       const dir = i ? 1 : -1;
@@ -1071,6 +1234,14 @@ const Riggy = (() => {
 
   /* ---------------- accessories ---------------- */
   const ACC = {
+    bignose(ctx, j, skin) {
+      const r = j.head.r, turn = j.head.turn;
+      if (turn < -0.2) return;
+      const cx = turn * r * .16, y = -r * .10 + r * .27;
+      U.ellipse(ctx, cx, y, r * .2, r * .14); U.ink(ctx, '#232a48', 3.5, skin.outline);
+      U.ellipse(ctx, cx - r * .06, y - r * .04, r * .06, r * .035);
+      ctx.fillStyle = 'rgba(255,255,255,.55)'; ctx.fill();
+    },
     cap(ctx, j, skin) {
       const r = j.head.r;
       ctx.save(); ctx.translate(0, -r * .62);
@@ -1262,11 +1433,102 @@ const Riggy = (() => {
       });
       ctx.restore();
     },
+    bandana(ctx, j, skin, t) {
+      // knotted neckerchief: a triangle hanging below the chin with polka dots
+      ctx.save();
+      const col = skin.accent || '#e5262b';
+      const flap = Math.sin(t * 6) * 1.5;
+      U.poly(ctx, [[-23, -112], [23, -112], [3 + flap, -80], [-4 + flap, -80]]);
+      U.ink(ctx, col, 4.5, skin.outline);
+      [[-9, -104], [8, -105], [0, -93]].forEach(([x, y]) => { U.ellipse(ctx, x, y, 2.6, 2.6); ctx.fillStyle = 'rgba(255,255,255,.85)'; ctx.fill(); });
+      U.roundRect(ctx, -25, -116, 50, 11, 5); U.ink(ctx, col, 4, skin.outline);
+      ctx.restore();
+    },
+    wings(ctx, j, skin, t) {
+      // scalloped bat wings behind the body, flapping gently
+      ctx.save();
+      const f = Math.sin(t * 7) * 7;
+      [-1, 1].forEach(s => {
+        ctx.beginPath();
+        ctx.moveTo(s * 12, -104);
+        ctx.lineTo(s * 66, -150 + f);
+        ctx.quadraticCurveTo(s * 66, -130 + f * .6, s * 84, -122 + f * .5);
+        ctx.quadraticCurveTo(s * 72, -108 + f * .3, s * 82, -92);
+        ctx.quadraticCurveTo(s * 62, -96, s * 62, -76);
+        ctx.quadraticCurveTo(s * 46, -92, s * 30, -68);
+        ctx.lineTo(s * 12, -80);
+        ctx.closePath();
+        U.ink(ctx, skin.wing || '#5a49b8', 4.5, skin.outline);
+        ctx.strokeStyle = U.rgba(skin.wingLo || '#2f2670', .8); ctx.lineWidth = 2.4; ctx.lineCap = 'round';
+        [[66, -150 + f, 44, -92], [84, -122 + f * .5, 46, -90], [82, -92, 44, -88]].forEach(([x1, y1, x2, y2]) => {
+          ctx.beginPath(); ctx.moveTo(s * 14, -100); ctx.lineTo(s * x1 * .92, y1 * .98 + 2); ctx.stroke();
+        });
+      });
+      ctx.restore();
+    },
   };
+  /* new accessory art for the five extra unlockable originals */
+  Object.assign(ACC, {
+    quills(ctx, j, skin, t) {              // fan of spines behind the back
+      ctx.save();
+      const w = Math.sin(t * 5) * 2;
+      const spikes = [[-46, -128], [-60, -100], [-62, -72], [-52, -48], [46, -128], [60, -100], [62, -72], [52, -48], [-24, -146], [0, -152], [24, -146]];
+      spikes.forEach(([x, y], i) => {
+        const bx = x * .45, by = y * .62 - 26;
+        U.poly(ctx, [[bx - 9, by + 12], [x + (i % 2 ? w : -w), y], [bx + 9, by + 12]]);
+        U.ink(ctx, i % 2 ? skin.quill || '#7a4a26' : skin.quillHi || '#a8683a', 4, skin.outline);
+      });
+      ctx.restore();
+    },
+    antlers(ctx, j, skin) {
+      const r = j.head.r, col = skin.antler || '#c9955a';
+      ctx.save(); ctx.translate(0, -r * .8);
+      ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+      [-1, 1].forEach(sg => {
+        const stroke = (w, c) => {
+          ctx.strokeStyle = c; ctx.lineWidth = w;
+          ctx.beginPath(); ctx.moveTo(sg * r * .3, 2); ctx.quadraticCurveTo(sg * r * .62, -r * .35, sg * r * .5, -r * .78); ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(sg * r * .52, -r * .28); ctx.lineTo(sg * r * .9, -r * .42); ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(sg * r * .56, -r * .56); ctx.lineTo(sg * r * .88, -r * .78); ctx.stroke();
+        };
+        stroke(11, skin.outline); stroke(6, col);
+      });
+      ctx.restore();
+    },
+    beanie(ctx, j, skin, t) {
+      const r = j.head.r, col = skin.beanie || '#3a8fe8', bob = Math.sin(t * 6) * 1.5;
+      ctx.save(); ctx.translate(0, -r * .55);
+      ctx.beginPath(); ctx.arc(0, 0, r * .95, Math.PI, 0); ctx.closePath();
+      U.ink(ctx, col, 4.5, skin.outline);
+      U.roundRect(ctx, -r * .98, -r * .02, r * 1.96, r * .26, 8); U.ink(ctx, skin.beanieBand || '#ffffff', 4, skin.outline);
+      U.ellipse(ctx, 0, -r * .98 + bob, r * .2, r * .2); U.ink(ctx, skin.beanieBand || '#ffffff', 3.5, skin.outline);
+      ctx.restore();
+    },
+    snorkel(ctx, j, skin) {                // dive mask pushed up on the forehead + a tube
+      const r = j.head.r;
+      ctx.save(); ctx.translate(0, -r * .62);
+      ctx.beginPath(); ctx.moveTo(r * .95, r * .1); ctx.lineTo(r * 1.05, -r * .85);
+      ctx.strokeStyle = skin.outline; ctx.lineWidth = 12; ctx.lineCap = 'round'; ctx.stroke();
+      ctx.strokeStyle = '#ffb02e'; ctx.lineWidth = 6; ctx.stroke();
+      U.roundRect(ctx, -r * .85, -r * .22, r * 1.7, r * .42, 12); U.ink(ctx, '#ff7a3d', 4, skin.outline);
+      U.roundRect(ctx, -r * .68, -r * .14, r * 1.36, r * .26, 8); U.ink(ctx, '#9fe8ff', 3, skin.outline);
+      ctx.fillStyle = 'rgba(255,255,255,.55)'; ctx.fillRect(-r * .55, -r * .1, r * .3, r * .06);
+      ctx.restore();
+    },
+    horns(ctx, j, skin) {
+      const r = j.head.r, col = skin.horn || '#ffe9b0';
+      ctx.save(); ctx.translate(0, -r * .8);
+      [-1, 1].forEach(sg => {
+        U.poly(ctx, [[sg * r * .2, 4], [sg * r * .62, -r * .62], [sg * r * .5, 2]]);
+        U.ink(ctx, col, 4.5, skin.outline);
+      });
+      ctx.restore();
+    }
+  });
   // accessories drawn *behind* the body
-  const BACK_ACC = new Set(['cape', 'backpack']);
+  const BACK_ACC = new Set(['cape', 'backpack', 'wings', 'quills']);
   // accessories drawn on the torso, not in the head group
-  const TORSO_ACC = new Set(['dress', 'hoodCollar']);
+  const TORSO_ACC = new Set(['dress', 'hoodCollar', 'bandana']);
 
   /* ---------------------------------------------------------
      MAIN DRAW
@@ -1319,7 +1581,9 @@ const Riggy = (() => {
     }
 
     // --- behind-the-body layer
-    if (skin.bushyTail) {
+    if (skin.tailStyle) {
+      ctx.save(); ctx.translate(-9, -50); styledTail(ctx, skin, skin.tailStyle, j.tailWag); ctx.restore();
+    } else if (skin.bushyTail) {
       foxTail(ctx, j.tail, j.tailWag, skin, 1);
     } else if (skin.roundTail) {
       ctx.save(); ctx.translate(-30, -44); fluffTail(ctx, skin); ctx.restore();
@@ -1355,12 +1619,15 @@ const Riggy = (() => {
     ctx.save();
     ctx.translate(j.head.x, j.head.y);
     ctx.rotate(j.head.tilt);
-    if (skin.roundEars) {
+    if (skin.earStyle === 'deer') {
+      deerEars(ctx, j.head.r, skin);
+    } else if (skin.roundEars) {
+      const es = skin.earSize || 1, ex0 = skin.earX || .82;
       [-1, 1].forEach(s => {
-        U.ellipse(ctx, s * j.head.r * .82, -j.head.r * .5, 13, 14);
+        U.ellipse(ctx, s * j.head.r * ex0, -j.head.r * .5, 13 * es, 14 * es);
         U.ink(ctx, skin.body, 5, skin.outline);
-        U.ellipse(ctx, s * j.head.r * .82, -j.head.r * .5, 6, 7);
-        ctx.fillStyle = U.rgba(skin.bodyLo, .7); ctx.fill();
+        U.ellipse(ctx, s * j.head.r * ex0, -j.head.r * .5, 6 * es, 7 * es);
+        ctx.fillStyle = skin.earSize ? U.rgba(skin.bodyHi, .85) : U.rgba(skin.bodyLo, .7); ctx.fill();
       });
     } else if (skin.foxEars) {
       foxEar(ctx, -16, -j.head.r * .8, 54, 36, j.ear.l, j.ear.flop, skin);
@@ -1427,7 +1694,9 @@ const Riggy = (() => {
     const skin = SKINS[skinId] || SKINS.classic;
     const j = solve('idle', t, 0, { turn: 1 }, skinId);
     ctx.save(); ctx.translate(cx, cy); ctx.scale(r / 42, r / 42);
-    if (skin.bushyTail) {
+    if (skin.tailStyle) {
+      ctx.save(); ctx.translate(-8, 22); styledTail(ctx, skin, skin.tailStyle, Math.sin(t) * .3, .8); ctx.restore();
+    } else if (skin.bushyTail) {
       foxTail(ctx, -0.6, Math.sin(t) * .3, skin, 1);
     } else if (skin.roundTail) {
       ctx.save(); ctx.translate(-26, 30); fluffTail(ctx, skin, .8); ctx.restore();
@@ -1438,9 +1707,12 @@ const Riggy = (() => {
     } else {
       tail(ctx, -0.6, Math.sin(t) * .3, skin, 1);
     }
-    if (skin.roundEars) {
+    if (skin.earStyle === 'deer') {
+      deerEars(ctx, j.head.r, skin);
+    } else if (skin.roundEars) {
+      const es = skin.earSize || 1, ex0 = skin.earX || .82;
       [-1, 1].forEach(s => {
-        U.ellipse(ctx, s * j.head.r * .82, -j.head.r * .5, 13, 14);
+        U.ellipse(ctx, s * j.head.r * ex0, -j.head.r * .5, 13 * es, 14 * es);
         U.ink(ctx, skin.body, 5, skin.outline);
       });
     } else if (skin.foxEars) {

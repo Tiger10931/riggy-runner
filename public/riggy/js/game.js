@@ -37,6 +37,15 @@ const Game = (() => {
   }
   const BIOME_METRES = 620;
 
+  /* admin hooks — all neutral by default; admin.js flips them from the admin panel (session only) */
+  const ADMIN = {
+    god: false, noObstacles: false, timeScale: 1,
+    speedMul: 1, jumpMul: 1, gravMul: 1, coinMul: 1,
+    biome: null,                     // null = normal, otherwise a forced World.BIOMES index
+    freezeTrains: false, gapMul: 1, puMul: 1, extraJumps: 0, powerMul: 1, goalMul: 1,
+    auto: false, hidePlayer: false, playerScale: 1, headStart: 0
+  };
+
   const PLAYER = { w: 76, hStand: 132, hRoll: 62, d: 56 };
 
   /* ---------------- canvas ---------------- */
@@ -111,10 +120,12 @@ const Game = (() => {
   /* the season follows the real calendar unless Settings overrides it */
   const season = () => World.currentSeason(Save.d.opts.season);
   /* level mode: each level has its own map (and colour twist); endless cycles every 620 m */
-  const biome = () => S.hacker ? World.HACKER : S.level
+  const biome = () => S.hacker ? World.HACKER : ADMIN.biome !== null
+    ? World.resolveBiome(ADMIN.biome, season().id, 0)
+    : S.level
     ? World.resolveBiome(Levels.mapIndex(S.level, MODE.id), season().id, S.level)
     : World.resolveBiome(S.biome, season().id, 0);
-  const nextBiome = () => S.hacker || S.level ? null : World.resolveBiome(S.biome + 1, season().id, 0);
+  const nextBiome = () => S.hacker || S.level || ADMIN.biome !== null ? null : World.resolveBiome(S.biome + 1, season().id, 0);
   const laneX = i => World.LANES[i];
 
   function puDuration(kind) {
@@ -126,13 +137,15 @@ const Game = (() => {
     if (kind === 'jetpack' && S.perk.jetpack) d *= 1.3;
     if (kind === 'sneakers' && S.perk.sneakers) d *= 1.35;
     if (kind === 'x2' && S.perk.x2) d *= 1.35;
-    return d;
+    if (kind === 'magnet') d *= 1 + Rebirth.lv('magnet') * 0.2;
+    return d * ADMIN.puMul * Rebirth.powerMul() * CharLv.powerMul();
   }
 
   /* ============================================================
      TRACK GENERATION
      ============================================================ */
   function addObstacle(o) {
+    if (ADMIN.noObstacles && o.type !== 'ramp') return;
     o.hit = false; o.passed = false; o.scored = false;
     obstacles.push(o);
   }
@@ -357,14 +370,14 @@ const Game = (() => {
       const consumed = PATTERNS[idx](spawnZ, difficulty);
       patternCount++;
       // powerup drop
-      if (patternCount % MODE.powerEvery === 0 || U.chance(MODE.powerChance)) {
+      if (patternCount % MODE.powerEvery === 0 || U.chance(MODE.powerChance * (S.perk.lucky ? 2 : 1) * (1 + Rebirth.lv('luck') * 0.1) * ADMIN.powerMul)) {
         const kinds = ['magnet', 'jetpack', 'x2', 'sneakers', 'shield', 'hoverboard'];
         const weights = [26, 14, 22, 16, 12, 10];
         let r = Math.random() * weights.reduce((a, b) => a + b, 0), k = 0;
         while (r > weights[k]) { r -= weights[k]; k++; }
         addPickup(kinds[k], laneX(U.randInt(0, 2)), 60, spawnZ + consumed * .55);
       }
-      const gapScale = U.lerp(MODE.gapStart, MODE.gapEnd, U.clamp(difficulty / MODE.diffMax, 0, 1));
+      const gapScale = U.lerp(MODE.gapStart, MODE.gapEnd, U.clamp(difficulty / MODE.diffMax, 0, 1)) * ADMIN.gapMul;
       spawnZ += consumed * gapScale + U.rand(240, 90);
     }
 
@@ -429,6 +442,7 @@ const Game = (() => {
     S.perk = {};
     const c = CHARACTERS.find(x => x.id === Save.d.character);
     if (c && c.perkKey) S.perk[c.perkKey] = true;
+    if (S.perk.echo) { S.perk.twohits = true; S.perk.shield = true; S.perk.hop = true; }   // Echo: shield + spare life + head start
   }
 
   function start() {
@@ -455,7 +469,7 @@ const Game = (() => {
 
     obstacles = []; coins = []; pickups = []; scenery = []; particles = []; floaters = [];
     /* head starts only apply to endless — a level is always the same stretch of track */
-    const headStart = lvl ? 0 : ((Save.d.upgrades.headstart || 0) * 150 + (S.perk.headstart ? 300 : 0) + (S.perk.hop ? 150 : 0)) * UNITS_PER_M;
+    const headStart = lvl ? 0 : ((Save.d.upgrades.headstart || 0) * 150 + (S.perk.headstart ? 300 : 0) + (S.perk.hop ? 150 : 0) + Rebirth.lv('head') * 100 + CharLv.head() + ADMIN.headStart) * UNITS_PER_M;
 
     Object.assign(S, {
       mode: 'countdown', t: 0,
@@ -469,15 +483,15 @@ const Game = (() => {
       boardT: 0, boardUsed: 0,
       shake: 0, flash: 0, hitFlash: 0,
       biome: lvl ? Math.min(5, Math.floor((lvl - 1) / 10)) : 0, biomeBlend: 0,
-      hacker, level: lvl, goalDist: hacker ? 1e9 : lvl ? Levels.goal(lvl) : 0, hits: 0, coinPicks: 0, finishCoins: false,
+      hacker, level: lvl, goalDist: hacker ? 1e9 : lvl ? Math.round(Levels.goal(lvl) * ADMIN.goalMul) : 0, hits: 0, coinPicks: 0, finishCoins: false,
       tricks: 0, near: 0, maxCombo: 1, roofTime: 0, magnets: 0,
       camX: 0, camShakeX: 0, camShakeY: 0, lastMissionCheck: 0
     });
     goalZ = S.goalDist * UNITS_PER_M;
     UI.setLevelHud(lvl ? (hacker ? { n: 'HACKER', name: 'HACKER', season: { name: 'HACKER' } } : { n: lvl, name: biome().name, season: season() }) : null);
-    S.boards = Save.d.hoverboards + (S.perk.board ? 1 : 0);
+    S.boards = Save.d.hoverboards + (S.perk.board ? 1 : 0) + Rebirth.lv('boards') + CharLv.boards();
     if (S.perk.shield) S.powers.shield = puDuration('shield');
-    S.extraLife = S.perk.twohits ? 1 : 0;     // Ferrick: survive one extra lethal hit per run
+    S.extraLife = (S.perk.twohits ? 1 : 0) + Rebirth.lv('life');     // Ferrick: survive one extra lethal hit per run
 
     S.runStats = { runCoins: 0, runDist: 0, jumps: 0, rolls: 0, near: 0, roofTime: 0, magnets: 0, runScore: 0, maxCombo: 1, tricks: 0, boards: 0, biomeIdx: 0 };
 
@@ -494,7 +508,7 @@ const Game = (() => {
     else if (lvl) UI.toast(`LEVEL ${lvl} · ${biome().name} · ${season().name}`, 'gold');
     UI.countdown(() => {
       S.mode = 'play';
-      if (S.perk.twohits) UI.toast('Ferrick can take 2 hits!', 'good');
+      if (S.perk.twohits) { const cn = (CHARACTERS.find(x => x.id === Save.d.character) || {}).name || 'You'; UI.toast(cn.split(' the ')[0] + ' can take 2 hits!', 'good'); }
     });
   }
 
@@ -550,6 +564,14 @@ const Game = (() => {
     d.totalTricks += S.tricks - B.tricks;
     d.nearMisses += S.near - B.near;
     Save.addCoins(S.coins - B.coins);
+    const rbBonus = Math.round((S.coins - B.coins) * (Rebirth.coinMul() - 1));
+    if (rbBonus > 0) { Save.addCoins(rbBonus); UI.toast('+' + U.fmt(rbBonus) + ' rebirth bonus', 'gold'); }
+    /* character level: coin bonus + XP for the equipped character */
+    const clBonus = Math.round((S.coins - B.coins) * (CharLv.coinMul() - 1));
+    if (clBonus > 0) Save.addCoins(clBonus);
+    const xpGain = CharLv.runXp(S.coins - B.coins, Math.floor(S.dist) - B.dist, S.score);
+    const lvUp = CharLv.gain(d.character, xpGain);
+    if (lvUp.to > lvUp.from) UI.toast('LEVEL UP! ' + ((CHARACTERS.find(c => c.id === d.character) || {}).name || '').split(' the ')[0] + ' is now level ' + lvUp.to, 'gold');
     /* remember what has already been written so a revived run never double-counts */
     S.banked = {
       coins: S.coins, dist: Math.floor(S.dist), jumps: S.runStats.jumps,
@@ -640,7 +662,7 @@ const Game = (() => {
 
   /* ---- second chance: pay coins to keep the run alive ---- */
   function reviveCost() {
-    return Math.round(250 * MODE.reviveMul * Math.pow(2, S.reviveCount || 0) * (S.perk && S.perk.cheaprevive ? .5 : 1));
+    return Math.round(250 * MODE.reviveMul * Math.pow(2, S.reviveCount || 0) * (S.perk && S.perk.cheaprevive ? .5 : 1) * Rebirth.reviveMul());
   }
 
   function revive() {
@@ -698,12 +720,12 @@ const Game = (() => {
     if (S.mode !== 'play') return;
     if (S.powers.jetpack > 0) return;
     const superJ = S.powers.sneakers > 0;
-    S.maxJumps = superJ ? 2 : 1;
+    S.maxJumps = (superJ ? 2 : 1) + ADMIN.extraJumps;
     const coyote = S.onGround || S.coyote > 0;
     if (coyote || S.jumps < S.maxJumps) {
       const first = coyote;
       S.coyote = 0;
-      S.vy = superJ ? SUPER_JUMP_V : JUMP_V;
+      S.vy = (superJ ? SUPER_JUMP_V : JUMP_V) * ADMIN.jumpMul;
       S.onGround = false;
       S.rolling = 0;
       S.jumps++;
@@ -794,7 +816,7 @@ const Game = (() => {
   }
 
   function stumble() {
-    if (S.invuln > 0) return;
+    if (S.invuln > 0 || ADMIN.god) return;
     S.hits++;
     S.stumbleT = .55;
     S.speed = Math.max(SPEED_START * .8, S.speed * .72);
@@ -810,7 +832,7 @@ const Game = (() => {
   }
 
   function addCombo(n = 1) {
-    const boost = S.perk.combo ? 1.2 : 1;
+    const boost = (S.perk.combo ? 1.2 : 1) * (1 + Rebirth.lv('combo') * 0.1);
     S.combo += n * (S.perk.near ? 2 : 1);
     S.comboTimer = 3.2;
     S.maxCombo = Math.max(S.maxCombo, comboMult());
@@ -859,7 +881,7 @@ const Game = (() => {
         if (vertOverlap && !onRoof) {
           o.hit = true;
           if (!o.lethal) { stumble(); }
-          else if (!survivesHit(o.type)) { die(); return; }
+          else if (!ADMIN.god && !survivesHit(o.type)) { die(); return; }
         }
       }
 
@@ -929,7 +951,7 @@ const Game = (() => {
     if (S.mode !== 'play') { updateParticles(dt); camFollow(dt); return; }
 
     /* speed + distance */
-    const target = Math.min(SPEED_MAX, SPEED_START + S.t * SPEED_RAMP * 3);
+    const target = Math.min(SPEED_MAX, SPEED_START + S.t * SPEED_RAMP * 3) * ADMIN.speedMul;
     S.speed = U.lerp(S.speed, target * (S.boardT > 0 ? 1.06 : 1), 1 - Math.pow(.2, dt));
     S.z += S.speed * dt;
     S.dist = S.z / UNITS_PER_M;
@@ -994,6 +1016,8 @@ const Game = (() => {
     if (S.flash > 0) S.flash = Math.max(0, S.flash - dt * 2);
     if (S.hitFlash > 0) S.hitFlash = Math.max(0, S.hitFlash - dt * 2.5);
 
+    if (ADMIN.auto) autopilot();
+
     /* vertical physics */
     if (S.powers.jetpack > 0) {
       const targetY = 330;
@@ -1003,7 +1027,7 @@ const Game = (() => {
       // jetpack coin stream
       if (Math.random() < dt * 6) addCoin(S.laneX, 330 + U.rand(40, -40), S.z + 2600);
     } else {
-      S.vy -= GRAV * dt * (S.boardT > 0 ? .82 : 1);
+      S.vy -= GRAV * dt * (S.boardT > 0 ? .82 : 1) * ADMIN.gravMul;
       S.y += S.vy * dt;
       if (S.y <= S.groundY) {
         if (!S.onGround && S.vy < -200) {
@@ -1030,7 +1054,7 @@ const Game = (() => {
     else S.state = 'run';
 
     /* world */
-    obstacles.forEach(o => { if (o.vz) o.z += o.vz * dt; });
+    obstacles.forEach(o => { if (o.vz && !ADMIN.freezeTrains) o.z += o.vz * dt; });
     generateAhead();
     cull();
     collide();
@@ -1056,6 +1080,27 @@ const Game = (() => {
       S.runStats.biomeIdx = S.biome;
       const done = Missions.update(S.runStats);
       done.forEach(m => { UI.missionToast(m.text); Sound.sfx.mission(); });
+    }
+  }
+
+  /* admin autopilot: sidestep anything solid, jump / roll the rest */
+  function autopilot() {
+    if (S.mode !== 'play' || S.powers.jetpack > 0) return;
+    const half = o => (o.d || 60) / 2;
+    const hard = o => o.lethal && o.type !== 'ramp' && (o.clear === 'none' || o.type === 'train');
+    const blocked = (lane, from, to) => obstacles.some(o => hard(o) && o.lane === lane && o.z + half(o) > S.z + from && o.z - half(o) < S.z + to);
+    if (!S.support && blocked(S.lane, 0, 950)) {
+      for (const l of [S.lane - 1, S.lane + 1]) if (l >= 0 && l <= 2 && !blocked(l, -150, 1200)) { moveLane(l - S.lane); return; }
+      return;
+    }
+    for (const o of obstacles) {
+      if (o.lane !== S.lane || (o.clear !== 'jump' && o.clear !== 'roll')) continue;
+      const e = o.z - half(o) - (S.z + PLAYER.d / 2);
+      if (e > 0 && e < S.speed * .26) {
+        if (o.clear === 'jump' && S.onGround) jump();
+        else if (o.clear === 'roll' && S.rolling <= 0) roll();
+        return;
+      }
     }
   }
 
@@ -1091,7 +1136,7 @@ const Game = (() => {
       if (near) {
         c.got = true;
         S.coinPicks++;
-        const val = Math.round(1 * goldenBoost * (S.powers.x2 > 0 ? 2 : 1));
+        const val = Math.max(1, Math.round(1 * goldenBoost * (S.powers.x2 > 0 ? 2 : 1) * ADMIN.coinMul));
         S.coinAcc = (S.coinAcc || 0) + val * (MODE.coins - 1);
         const bonusCoins = Math.floor(S.coinAcc); S.coinAcc -= bonusCoins;
         S.coins += val + bonusCoins;
@@ -1286,9 +1331,10 @@ const Game = (() => {
   }
 
   function drawPlayer() {
+    if (ADMIN.hidePlayer) return;
     const pr = P(S.laneX, S.y, S.z);
     if (!pr) return;
-    const s = pr.s * 0.66;
+    const s = pr.s * 0.66 * ADMIN.playerScale;
     const t = S.t;
     const phase = t * (6 + S.speed / 260) * (S.boardT > 0 ? .4 : 1);
 
@@ -1404,7 +1450,11 @@ const Game = (() => {
     dt = Math.min(dt, 1 / 20);        // never simulate a giant step
     S.dt = dt;
 
-    if (S.mode === 'play' || S.mode === 'dead' || S.mode === 'countdown' || S.mode === 'win') update(dt);
+    if (S.mode === 'play' || S.mode === 'dead' || S.mode === 'countdown' || S.mode === 'win') {
+      /* admin time scale: >1 runs several smaller sim steps so physics never tunnels */
+      const sc = ADMIN.timeScale, steps = Math.max(1, Math.ceil(sc));
+      for (let i = 0; i < steps; i++) update(dt * sc / steps);
+    }
     else { S.t += dt; camFollow(dt); }
 
     render();
@@ -1493,7 +1543,40 @@ const Game = (() => {
   }
   function playEndless() { RUN = { kind: 'endless', level: 0 }; start(); }
 
+  /* helpers for admin.js. They only reach things already inside this closure; nothing here touches the save signature. */
+  const admin = {
+    hooks: ADMIN,
+    /* start any level, ignoring the unlock ladder */
+    playAnyLevel(n) { RUN = { kind: 'level', level: Levels.clampLvl(n) }; start(); },
+    clearObstacles(ahead = 99999) { obstacles = obstacles.filter(o => o.z < S.z - 200 || o.z > S.z + ahead); },
+    skip(metres) {
+      if (S.mode !== 'play' && S.mode !== 'pause') return false;
+      S.z += metres * UNITS_PER_M; S.dist = S.z / UNITS_PER_M;
+      obstacles = obstacles.filter(o => o.z - (o.d || 60) / 2 > S.z + 1400 || o.z + (o.d || 60) / 2 < S.z - 300);
+      return true;
+    },
+    grab(kind) { if (S.mode === 'play' || S.mode === 'pause') grabPickup(kind); },
+    spawnPickup(kind, lane = S.lane) { addPickup(kind, laneX(lane), 60, S.z + 700); },
+    spawnCoins(n = 40) { for (let l = 0; l < 3; l++) addCoinRun(laneX(l), 34, S.z + 500 + l * 60, Math.ceil(n / 3), 70, l === 1 ? 60 : 0); },
+    finish() { if (S.level && !S.hacker && (S.mode === 'play' || S.mode === 'pause')) { S.z = Math.max(S.z, goalZ - 60); return true; } return false; },
+    crash() { if (S.mode === 'pause') { S.mode = 'play'; UI.show(null); Sound.duck(false); } if (S.mode === 'play') die(); },
+    /* revive without paying, then hand the coins back exactly as they were */
+    freeRevive() {
+      if (S.mode !== 'dead') return false;
+      const d = Save.d, before = d.coins;
+      S.reviveCount = 0; d.coins = before + 1e9;
+      const ok = revive();
+      d.coins = before; Save.save();
+      return ok;
+    },
+    /* drag every coin on the road onto the player so the normal pickup code collects it */
+    vacuum() { if (S.mode !== 'play') return; coins.forEach(c => { if (!c.got && c.z > S.z - 100 && c.z < S.z + 6000) { c.z = S.z + 20; c.x = S.laneX; c.y = S.y + 62; } }); },
+    counts() { return { obstacles: obstacles.length, coins: coins.length, pickups: pickups.length, scenery: scenery.length, particles: particles.length }; },
+    get mode() { return MODE; }
+  };
+
   const api = {
+    admin,
     start, play, playLevel, playHacker, escapeHacker, playEndless, toMenu, togglePause, deployBoard, revive, boot,
     get run() { return RUN; }, get season() { return season(); }, get state() { return S; }
   };

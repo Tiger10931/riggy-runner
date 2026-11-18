@@ -22,6 +22,15 @@ const Rhythm = (() => {
   const DIFF_ORDER = ['easy', 'normal', 'hard', 'insane'];
   const HEALTH = { sick: 2.2, good: 1.6, bad: 0.8, start: 50 };
   let D = DIFFS.normal, WIN = D.win, TRAVEL_MS = D.travel;
+  /* song registry: the original mp3 + the synthesized songs from songs.js */
+  const HS = { id: 'highscore', name: 'Highscore', desc: 'Teminite & Panda Eyes', rewardMul: 1 };
+  const songList = () => [HS, ...Songs.list];
+  const curSong = () => songList().find(x => x.id === Save.d.rhythmSong) || HS;
+  const jamMul = () => (typeof Rebirth !== 'undefined' ? Rebirth.jamMul() : 1);
+  const rewardNow = () => Math.round(D.reward * curSong().rewardMul * jamMul() * RA.rewardMul);
+  const RA = { invincible: false, autoplay: false, rewardMul: 1 };   // admin hooks
+  let M = RHYTHM_CHART;                     // meta of the loaded song: bpm, offsetMs, lengthMs
+  let audioId = null;
   function setDiff(k) {
     if (!DIFFS[k]) k = 'normal';
     Save.d.rhythmDiff = k; Save.save();
@@ -73,7 +82,7 @@ const Rhythm = (() => {
   function refreshButton() {
     const b = $('#rhythmBtn'); if (!b) return;
     if (doneToday()) {
-      b.textContent = 'DAILY JAM \u2713 \u00b7 NEXT IN ' + untilTomorrow();
+      b.textContent = 'DAILY JAM \u2713 \u00b7 FREE PLAY \u00b7 COINS IN ' + untilTomorrow();
       b.classList.add('done');
     } else {
       b.textContent = 'DAILY JAM \u00b7 UP TO +1000 COINS';
@@ -98,7 +107,6 @@ const Rhythm = (() => {
 
   function open() {
     init();
-    if (doneToday()) { UI.toast('Daily Jam done — come back tomorrow!', 'good'); return; }
     rebuildKeys(); setDiff(Save.d.rhythmDiff);
     Sound.resume();
     Sound.setMusic(false);
@@ -107,7 +115,7 @@ const Rhythm = (() => {
     window.addEventListener('keydown', onKey, true);
     window.addEventListener('keyup', onKeyUp, true);
     if (!audio) {
-      audio = new Audio(SONG_URL);
+      audio = new Audio();
       audio.preload = 'auto';
       audio.volume = 0.9;
     }
@@ -151,17 +159,27 @@ const Rhythm = (() => {
     const a = set(0), b = set(1);
     return '<span>' + a + '</span>' + (b.replace(/\u2014| /g, '') ? ' or <span>' + b + '</span>' : '') + ' or tap the lanes';
   }
+  function songHtml() {
+    const cur = curSong().id, bests = Save.d.rhythmBests || {};
+    return '<div class="rh-songs">' + songList().map(x => {
+      const b = bests[x.id + ':' + Save.d.rhythmDiff];
+      return '<button class="rh-song' + (x.id === cur ? ' sel' : '') + '" data-song="' + x.id + '"><div><b>' + x.name + '</b><small>' + x.desc +
+        (x.bpm ? ' \u00b7 ' + x.bpm + ' BPM' : '') + '</small></div><span>' + (x.rewardMul !== 1 ? '\u00d7' + x.rewardMul + ' coins<br>' : '') + (b ? 'BEST ' + U.fmt(b) : '') + '</span></button>';
+    }).join('') + '</div>';
+  }
   function diffHtml() {
     return '<div class="rh-diffs">' + DIFF_ORDER.map(k => {
       const d = DIFFS[k];
       return '<button class="rh-diff' + (D === d ? ' sel' : '') + '" data-diff="' + k + '" style="--dc:' + d.color + '">' +
-        '<b>' + d.label + '</b><span>+' + d.reward + '</span></button>';
+        '<b>' + d.label + '</b><span>+' + Math.round(d.reward * curSong().rewardMul * jamMul()) + '</span></button>';
     }).join('') + '</div>';
   }
   function showIntro() {
     inControls = false;
     setOverlay('DAILY JAM',
-      'Hit the arrows in time with the beat. Finish the song without running out of health to win <b>' + D.reward + ' coins</b> (once per day).<br>' +
+      'Hit the arrows in time with the beat. Finish the song without running out of health to win <b>' + rewardNow() + ' coins</b> (once per day).' +
+      (doneToday() ? '<br><span class="rh-free">FREE PLAY \u2014 today\'s coins already claimed</span>' : '') + '<br>' +
+      songHtml() +
       '<span class="rh-warn">Mashing keys with no arrow there drains your health!</span>' +
       diffHtml() +
       '<div class="rh-rate"><b style="color:' + RATING.sick.color + '">SICK</b> <b style="color:' + RATING.good.color + '">GOOD</b> <b style="color:' + RATING.bad.color + '">BAD</b> <b style="color:' + RATING.miss.color + '">FUCKED</b> (a miss)</div>' +
@@ -169,6 +187,9 @@ const Rhythm = (() => {
       [['START', 'big-btn small', startSong], ['SETTINGS', 'mid-btn', () => showSettings(showIntro)], ['BACK', 'mid-btn ghost', close]]);
     $('#rhText').querySelectorAll('.rh-diff').forEach(b => {
       b.onclick = () => { Sound.sfx.button(); setDiff(b.dataset.diff); showIntro(); };
+    });
+    $('#rhText').querySelectorAll('.rh-song').forEach(b => {
+      b.onclick = () => { Sound.sfx.button(); Save.d.rhythmSong = b.dataset.song; Save.save(); showIntro(); };
     });
   }
   function showSettings(back) {
@@ -250,8 +271,18 @@ const Rhythm = (() => {
 
   /* ---------------- run control ---------------- */
   function startSong() {
+    const id = curSong().id;
+    if (id === 'highscore') return prepared(id, RHYTHM_CHART, SONG_URL, (RHYTHM_CHART.difficulties && RHYTHM_CHART.difficulties[Save.d.rhythmDiff]) || RHYTHM_CHART.notes);
+    setOverlay('GETTING READY', 'Rendering <b>' + curSong().name + '</b>\u2026', []);
+    Songs.ensure(id).then(r => {
+      if (phase !== 'intro' && phase !== 'done') return;
+      prepared(id, r.meta, r.url, Songs.chart(id, Save.d.rhythmDiff));
+    }).catch(() => { UI.toast("Couldn't render the song", 'bad'); showIntro(); });
+  }
+  function prepared(id, meta, url, chart) {
     overlay.classList.add('hidden');
-    const chart = (RHYTHM_CHART.difficulties && RHYTHM_CHART.difficulties[Save.d.rhythmDiff]) || RHYTHM_CHART.notes;
+    M = meta;
+    if (audioId !== id) { audio.src = url; audioId = id; }
     notes = chart.map(n => ({ t: n[0], lane: n[1], hit: false, missed: false, flash: 0 }));
     S = {
       health: HEALTH.start, score: 0, combo: 0, maxCombo: 0,
@@ -298,18 +329,22 @@ const Rhythm = (() => {
       '<div><span>Difficulty</span><b style="color:' + D.color + '">' + D.label + '</b></div>' +
       '</div>';
     if (win) {
-      Save.addCoins(D.reward);
-      Save.d.rhythmLast = todayKey();
+      const paid = !doneToday(), pay = rewardNow();
+      if (paid) { Save.addCoins(pay); Save.d.rhythmLast = todayKey(); }
       Save.d.rhythmBest = Math.max(Save.d.rhythmBest || 0, S.score);
+      Save.d.rhythmBests = Save.d.rhythmBests || {};
+      const bk = curSong().id + ':' + Save.d.rhythmDiff;
+      Save.d.rhythmBests[bk] = Math.max(Save.d.rhythmBests[bk] || 0, S.score);
       Save.save();
       UI.refreshStats();
       Sound.sfx.mission && Sound.sfx.mission();
       setOverlay('SONG CLEARED!  RANK ' + rank,
-        stats + '<div class="rh-reward">+' + D.reward + ' COINS</div><div class="rh-note">Come back tomorrow for another jam.</div>',
-        [['BACK TO MENU', 'big-btn small', close]]);
+        stats + (paid ? '<div class="rh-reward">+' + pay + ' COINS</div><div class="rh-note">Come back tomorrow for more coins \u2014 or free-play any song now.</div>'
+                      : '<div class="rh-note">Free play \u2014 no coins this time.</div>'),
+        [['PLAY AGAIN', 'big-btn small', () => { phase = 'intro'; showIntro(); }], ['BACK TO MENU', 'mid-btn ghost', close]]);
     } else {
       setOverlay('YOU BLEW IT', stats + '<div class="rh-note">Health ran out — no coins spent, try again!</div>',
-        [['RETRY', 'big-btn small', () => { audio.currentTime = 0; startSong(); }], ['DIFFICULTY', 'mid-btn', () => { phase = 'intro'; showIntro(); }], ['BACK', 'mid-btn ghost', close]]);
+        [['RETRY', 'big-btn small', () => { audio.currentTime = 0; startSong(); }], ['SONG / DIFFICULTY', 'mid-btn', () => { phase = 'intro'; showIntro(); }], ['BACK', 'mid-btn ghost', close]]);
     }
   }
 
@@ -423,6 +458,8 @@ const Rhythm = (() => {
         rate('miss', n.lane);
       } else if (n.t > pos) break;
     }
+    if (RA.autoplay) for (const n of notes) { if (n.t > pos + 14) break; if (!n.hit && !n.missed && n.t > pos - 40) press(n.lane); }
+    if (RA.invincible) S.health = Math.max(S.health, 40);
     S.pStateT -= dt; if (S.pStateT <= 0) S.pState = 'idle';
     S.oStateT -= dt; if (S.oStateT <= 0) S.oState = 'idle';
     S.flash.forEach(f => { if (f) f.t += dt; });
@@ -430,7 +467,7 @@ const Rhythm = (() => {
     S.popups.forEach(p => p.t += dt);
     S.popups = S.popups.filter(p => p.t < 700);
     if (S.health <= 0) { S.health = 0; finish(false); return; }
-    if (pos >= RHYTHM_CHART.lengthMs - 400 || audio.ended) finish(true);
+    if (pos >= M.lengthMs - 400 || audio.ended) finish(true);
   }
 
   /* ---------------- drawing ---------------- */
@@ -521,8 +558,8 @@ const Rhythm = (() => {
 
   function draw(now) {
     const pos = S ? prevPos : 0;
-    const beatMs = 60000 / RHYTHM_CHART.bpm;
-    const beatF = ((pos - RHYTHM_CHART.offsetMs) / beatMs) % 1;
+    const beatMs = 60000 / M.bpm;
+    const beatF = ((pos - M.offsetMs) / beatMs) % 1;
     const pulse = phase === 'play' ? Math.pow(1 - (beatF < 0 ? beatF + 1 : beatF), 3) : 0;
 
     // background
@@ -540,7 +577,7 @@ const Rhythm = (() => {
     const sc = Math.max(.6, Math.min(H * .4 / 200, 1.7));
     const pId = Save.d.character, oId = pId === 'classic' ? 'ferrick' : 'classic';
     const bop = 1 + pulse * .04;
-    const oppCheer = phase === 'play' && Math.floor((pos - RHYTHM_CHART.offsetMs) / beatMs) % 4 === 0 && beatF < .3;
+    const oppCheer = phase === 'play' && Math.floor((pos - M.offsetMs) / beatMs) % 4 === 0 && beatF < .3;
     const oState = S && S.oStateT > 0 ? S.oState : (oppCheer ? 'cheer' : 'idle');
     ctx.save(); ctx.translate(W * .2, H * .94); ctx.scale(1, bop); ctx.translate(-W * .2, -H * .94);
     Riggy.draw(ctx, { x: W * .2, y: H * .94, scale: sc, skinId: oId, state: oState, t, phase: t * 6, extra: { turn: 1 } });
@@ -613,7 +650,7 @@ const Rhythm = (() => {
 
     // progress bar
     if (S) {
-      const pr = Math.max(0, Math.min(1, pos / RHYTHM_CHART.lengthMs));
+      const pr = Math.max(0, Math.min(1, pos / M.lengthMs));
       ctx.fillStyle = 'rgba(255,255,255,.15)'; ctx.fillRect(0, 0, W, 5);
       ctx.fillStyle = '#ffc21c'; ctx.fillRect(0, 0, W * pr, 5);
     }
@@ -682,5 +719,5 @@ const Rhythm = (() => {
     raf = requestAnimationFrame(frame);
   }
 
-  return { open, close, refreshButton, doneToday };
+  return { open, close, refreshButton, doneToday, admin: RA };
 })();
